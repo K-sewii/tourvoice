@@ -1,0 +1,16 @@
+/Users/truongphucan/Documents/CNPM/TourVoice.BLL/bin/Debug/net10.0/TourVoice.BLL.deps.json
+/Users/truongphucan/Documents/CNPM/TourVoice.BLL/bin/Debug/net10.0/TourVoice.BLL.dll
+/Users/truongphucan/Documents/CNPM/TourVoice.BLL/bin/Debug/net10.0/TourVoice.BLL.pdb
+/Users/truongphucan/Documents/CNPM/TourVoice.BLL/bin/Debug/net10.0/TourVoice.DAL.dll
+/Users/truongphucan/Documents/CNPM/TourVoice.BLL/bin/Debug/net10.0/TourVoice.DAL.pdb
+/Users/truongphucan/Documents/CNPM/TourVoice.BLL/obj/Debug/net10.0/TourVoice.BLL.csproj.AssemblyReference.cache
+/Users/truongphucan/Documents/CNPM/TourVoice.BLL/obj/Debug/net10.0/TourVoice.BLL.GeneratedMSBuildEditorConfig.editorconfig
+/Users/truongphucan/Documents/CNPM/TourVoice.BLL/obj/Debug/net10.0/TourVoice.BLL.AssemblyInfoInputs.cache
+/Users/truongphucan/Documents/CNPM/TourVoice.BLL/obj/Debug/net10.0/TourVoice.BLL.AssemblyInfo.cs
+/Users/truongphucan/Documents/CNPM/TourVoice.BLL/obj/Debug/net10.0/TourVoice.BLL.csproj.CoreCompileInputs.cache
+/Users/truongphucan/Documents/CNPM/TourVoice.BLL/obj/Debug/net10.0/TourVoice.BLL.sourcelink.json
+/Users/truongphucan/Documents/CNPM/TourVoice.BLL/obj/Debug/net10.0/TourVoic.8D31E8E5.Up2Date
+/Users/truongphucan/Documents/CNPM/TourVoice.BLL/obj/Debug/net10.0/TourVoice.BLL.dll
+/Users/truongphucan/Documents/CNPM/TourVoice.BLL/obj/Debug/net10.0/refint/TourVoice.BLL.dll
+/Users/truongphucan/Documents/CNPM/TourVoice.BLL/obj/Debug/net10.0/TourVoice.BLL.pdb
+/Users/truongphucan/Documents/CNPM/TourVoice.BLL/obj/Debug/net10.0/ref/TourVoice.BLL.dll
