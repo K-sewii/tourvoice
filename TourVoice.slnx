@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="TourVoice.API/TourVoice.API.csproj" />
+  <Project Path="TourVoice.BLL/TourVoice.BLL.csproj" />
+  <Project Path="TourVoice.DAL/TourVoice.DAL.csproj" />
+</Solution>
