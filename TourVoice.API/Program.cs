@@ -33,6 +33,23 @@ app.MapGet("/weatherforecast", () =>
 })
 .WithName("GetWeatherForecast");
 
+
+app.MapGet("/api/tours", () =>
+{
+    var location = new
+    {
+        Id = 1,
+        LocationName = "Chợ Bến Thành",
+        Description = new 
+        {
+            vi = "Chợ Bến Thành là biểu tượng của thành phố...",
+            en = "Ben Thanh Market is a symbol of the city..."
+        },
+        AudioGuideUrl = "https://example.com/audio/cho-ben-thanh.mp3"
+    };
+    return Results.Ok(location);
+});
+
 app.Run();
 
 record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
