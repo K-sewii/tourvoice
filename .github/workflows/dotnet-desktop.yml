@@ -10,10 +10,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    defaults:
-      run:
-        working-directory: ./server
-
     steps:
     - uses: actions/checkout@v4
     
@@ -23,7 +19,7 @@ jobs:
         dotnet-version: 8.0.x
         
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore ./server/TourVoice.API/TourVoice.API.csproj
       
-    - name: Build Solution
-      run: dotnet build --no-restore --configuration Release
+    - name: Build Project
+      run: dotnet build ./server/TourVoice.API/TourVoice.API.csproj --no-restore --configuration Release
