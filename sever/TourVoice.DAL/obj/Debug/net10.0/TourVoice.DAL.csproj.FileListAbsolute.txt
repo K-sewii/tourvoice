@@ -1,0 +1,13 @@
+/Users/truongphucan/Documents/CNPM/TourVoice.DAL/bin/Debug/net10.0/TourVoice.DAL.deps.json
+/Users/truongphucan/Documents/CNPM/TourVoice.DAL/bin/Debug/net10.0/TourVoice.DAL.dll
+/Users/truongphucan/Documents/CNPM/TourVoice.DAL/bin/Debug/net10.0/TourVoice.DAL.pdb
+/Users/truongphucan/Documents/CNPM/TourVoice.DAL/obj/Debug/net10.0/TourVoice.DAL.GeneratedMSBuildEditorConfig.editorconfig
+/Users/truongphucan/Documents/CNPM/TourVoice.DAL/obj/Debug/net10.0/TourVoice.DAL.AssemblyInfoInputs.cache
+/Users/truongphucan/Documents/CNPM/TourVoice.DAL/obj/Debug/net10.0/TourVoice.DAL.AssemblyInfo.cs
+/Users/truongphucan/Documents/CNPM/TourVoice.DAL/obj/Debug/net10.0/TourVoice.DAL.csproj.CoreCompileInputs.cache
+/Users/truongphucan/Documents/CNPM/TourVoice.DAL/obj/Debug/net10.0/TourVoice.DAL.sourcelink.json
+/Users/truongphucan/Documents/CNPM/TourVoice.DAL/obj/Debug/net10.0/TourVoice.DAL.dll
+/Users/truongphucan/Documents/CNPM/TourVoice.DAL/obj/Debug/net10.0/refint/TourVoice.DAL.dll
+/Users/truongphucan/Documents/CNPM/TourVoice.DAL/obj/Debug/net10.0/TourVoice.DAL.pdb
+/Users/truongphucan/Documents/CNPM/TourVoice.DAL/obj/Debug/net10.0/ref/TourVoice.DAL.dll
+/Users/truongphucan/Documents/CNPM/TourVoice.DAL/obj/Debug/net10.0/TourVoice.DAL.csproj.AssemblyReference.cache
