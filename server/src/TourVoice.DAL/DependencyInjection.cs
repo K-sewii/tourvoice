@@ -19,6 +19,7 @@ public static class DependencyInjection
 
         services.AddScoped<IPlaceRepository, PlaceRepository>();
         services.AddScoped<ILanguageRepository, LanguageRepository>();
+        services.AddScoped<ICustomerRepository, CustomerRepository>();
 
         return services;
     }
