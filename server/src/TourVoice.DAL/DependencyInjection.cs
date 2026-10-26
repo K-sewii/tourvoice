@@ -1,5 +1,7 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using TourVoice.DAL.Data;
 
 namespace TourVoice.DAL;
 
@@ -8,7 +10,12 @@ public static class DependencyInjection
     public static IServiceCollection AddDataAccessLayer(
         this IServiceCollection services, IConfiguration configuration)
     {
-        // Bước 3: đăng ký DbContext (SQL Server) và các repository tại đây
+        var connectionString = configuration.GetConnectionString("TourVoice")
+            ?? throw new InvalidOperationException("Thieu ConnectionStrings:TourVoice.");
+
+        services.AddDbContext<TourVoiceDbContext>(options =>
+            options.UseSqlServer(connectionString));
+
         return services;
     }
 }
