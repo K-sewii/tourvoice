@@ -6,7 +6,7 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 builder.Services.AddHealthChecks();
 
-// Program.cs chỉ biết lớp BLL
+// Program.cs chi biet lop BLL
 builder.Services.AddBusinessLayer(builder.Configuration);
 
 var app = builder.Build();
@@ -14,9 +14,10 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    await app.Services.InitializeDatabaseAsync();
 }
 
 app.MapControllers();
-app.MapHealthChecks("/health");   // CD ở bước 8 sẽ gọi endpoint này để kiểm tra sau khi deploy
+app.MapHealthChecks("/health");
 
 app.Run();
