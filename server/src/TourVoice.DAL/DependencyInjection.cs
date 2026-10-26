@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using TourVoice.DAL.Data;
+using TourVoice.DAL.Repositories;
 
 namespace TourVoice.DAL;
 
@@ -15,6 +16,9 @@ public static class DependencyInjection
 
         services.AddDbContext<TourVoiceDbContext>(options =>
             options.UseSqlServer(connectionString));
+
+        services.AddScoped<IPlaceRepository, PlaceRepository>();
+        services.AddScoped<ILanguageRepository, LanguageRepository>();
 
         return services;
     }
