@@ -2,6 +2,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using TourVoice.BLL.Auth;
 using TourVoice.BLL.Services;
+using TourVoice.BLL.Translation;
 using TourVoice.DAL;
 
 namespace TourVoice.BLL;
@@ -19,6 +20,12 @@ public static class DependencyInjection
         services.AddScoped<ILanguageService, LanguageService>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<ICustomerService, CustomerService>();
+        services.AddScoped<INarrationPipelineService, NarrationPipelineService>();
+
+        services.AddHttpClient<ITranslationProvider, MyMemoryTranslationProvider>(client =>
+        {
+            client.BaseAddress = new Uri("https://api.mymemory.translated.net/");
+        });
 
         return services;
     }

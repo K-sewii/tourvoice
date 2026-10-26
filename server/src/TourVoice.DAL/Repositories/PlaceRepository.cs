@@ -26,4 +26,10 @@ public class PlaceRepository : IPlaceRepository
             .Include(p => p.Translations)
             .FirstOrDefaultAsync(p => p.Slug == slug && p.Status == PlaceStatus.Published);
     }
+
+    // Khong AsNoTracking - dung cho admin sua truc tiep roi SaveChangesAsync
+    public Task<Place?> GetByIdAsync(int id) =>
+        _db.Places.Include(p => p.Translations).FirstOrDefaultAsync(p => p.Id == id);
+
+    public Task SaveChangesAsync() => _db.SaveChangesAsync();
 }
