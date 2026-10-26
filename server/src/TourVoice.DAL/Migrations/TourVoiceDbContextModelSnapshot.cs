@@ -222,6 +222,9 @@ namespace TourVoice.DAL.Migrations
                     b.Property<int>("Characters")
                         .HasColumnType("int");
 
+                    b.Property<int>("Chunks")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
