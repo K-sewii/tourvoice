@@ -24,6 +24,7 @@ public static class DependencyInjection
         services.AddScoped<ICustomerService, CustomerService>();
         services.AddScoped<IAdminPlaceService, AdminPlaceService>();
         services.AddScoped<INarrationPipelineService, NarrationPipelineService>();
+        services.AddScoped<IListenService, ListenService>();
 
         services.AddHttpClient<ITranslationProvider, MyMemoryTranslationProvider>(client =>
         {

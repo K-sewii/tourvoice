@@ -20,7 +20,8 @@ public static class DependencyInjection
         services.AddScoped<IPlaceRepository, PlaceRepository>();
         services.AddScoped<ILanguageRepository, LanguageRepository>();
         services.AddScoped<ICustomerRepository, CustomerRepository>();
-        services.AddScoped<IUsageLogRepository, UsageLogRepository>(); 
+        services.AddScoped<IUsageLogRepository, UsageLogRepository>();
+        services.AddScoped<IListenEventRepository, ListenEventRepository>();
         return services;
     }
 }

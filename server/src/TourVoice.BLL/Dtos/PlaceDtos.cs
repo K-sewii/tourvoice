@@ -19,4 +19,6 @@ public record PlaceDetailDto(
     string? Address = null, string? PriceRange = null, string? OpeningHours = null,
     List<FoodPlaceSummaryDto>? FoodPlaces = null);
 
+public record RecordListenRequestDto(string LanguageCode, int ListenedSeconds, string Source = "Mp3");
+
 public record LanguageDto(string Code, string VoiceName, bool IsEnabled);
