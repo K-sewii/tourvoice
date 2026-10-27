@@ -22,7 +22,7 @@ interface Props {
 
 /**
  * FR-08 narration player. Reads the approved text with the device voice (Web Speech).
- * The transcript is always available below (NFR-06), and is the only output when no voice exists.
+ * The transcript is always available below (NFR-06), and is the only output when Web Speech is unsupported.
  */
 export function NarrationPlayer({ text, contentLang, autoplay, onListened, ref }: Props) {
   const { t } = useTranslation()
@@ -52,7 +52,7 @@ export function NarrationPlayer({ text, contentLang, autoplay, onListened, ref }
   const total = p.sentences.length
   const playing = p.status === 'playing'
   const nextRate = RATES[(RATES.indexOf(p.rate) + 1) % RATES.length]
-  const textOnly = !p.supported || p.noVoice
+  const textOnly = !p.supported
 
   const transcript = (
     <ol lang={contentLang}>
@@ -131,7 +131,6 @@ export function NarrationPlayer({ text, contentLang, autoplay, onListened, ref }
       </div>
 
       {!p.supported && <p className="notice">{t('player.noSpeech')}</p>}
-      {p.noVoice && <p className="notice">{t('player.noVoice', { lang: LANG_INFO[contentLang].label })}</p>}
 
       {total > 0 &&
         (textOnly ? (

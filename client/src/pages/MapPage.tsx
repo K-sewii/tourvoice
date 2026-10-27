@@ -11,7 +11,7 @@ import { useAsync } from '../hooks/useAsync'
 import { useDistanceFormatter, useGeolocation } from '../hooks/useGeolocation'
 import { useLang, useLocalePath } from '../hooks/useLang'
 import { directionsUrl } from '../lib/geo'
-import { categoryLabel, foodTypeLabel, joinMeta } from '../lib/labels'
+import { categoryLabel, foodTypeLabel, joinMeta, localizeAddress, localizePrice, localizeTitle } from '../lib/labels'
 
 const CENTER: [number, number] = [10.748, 106.64]
 const CATEGORIES = ['Heritage', 'Market', 'FoodStreet', 'Park'] as const
@@ -69,16 +69,16 @@ export default function MapPage() {
           key: `${p.kind}${p.id}`,
           slug: p.slug,
           kind: isFood ? 'food' : 'dest',
-          name: p.name,
+          name: localizeTitle(p.name, lang),
           label: isFood ? foodTypeLabel(t, p.foodType) : categoryLabel(t, p.category),
-          sub: isFood ? joinMeta(p.priceRange, p.openingHours) : p.address,
+          sub: isFood ? joinMeta(localizePrice(p.priceRange, lang), p.openingHours) : localizeAddress(p.address, lang),
           lat: p.latitude,
           lng: p.longitude,
           detailPath: placePath(p),
           category: isFood ? 'food' : p.category,
         }
       }),
-    [data, t],
+    [data, lang, t],
   )
 
   const visible = pins.filter((p) => !filter || p.category === filter || (filter === 'food' && p.kind === 'food'))

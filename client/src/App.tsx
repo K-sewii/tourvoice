@@ -15,42 +15,61 @@ import HomePage from './pages/HomePage'
 import NotFoundPage from './pages/NotFoundPage'
 import PlaceDetailPage from './pages/PlaceDetailPage'
 
-// Leaflet is the heaviest dependency; keep it out of the initial bundle (NFR-02).
+// Leaflet and Admin screens are lazy-loaded to keep the guest initial bundle small (NFR-02, ADR-05).
 const MapPage = lazy(() => import('./pages/MapPage'))
+const AdminLoginPage = lazy(() => import('./pages/admin/AdminLoginPage'))
+const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'))
+const AdminOverviewPage = lazy(() => import('./pages/admin/AdminOverviewPage'))
+const AdminPlacesPage = lazy(() => import('./pages/admin/AdminPlacesPage'))
+const AdminPlaceEditorPage = lazy(() => import('./pages/admin/AdminPlaceEditorPage'))
+const AdminNarrationsPage = lazy(() => import('./pages/admin/AdminNarrationsPage'))
+const AdminLanguagesPage = lazy(() => import('./pages/admin/AdminLanguagesPage'))
+const AdminUsersPage = lazy(() => import('./pages/admin/AdminUsersPage'))
+const AdminUsagePage = lazy(() => import('./pages/admin/AdminUsagePage'))
 
 export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Navigate to={`/${detectLang()}`} replace />} />
-          <Route path="/q/:slug" element={<QrEntry />} />
-          <Route path="/:lang" element={<LangLayout />}>
-            <Route index element={<HomePage />} />
-            <Route path="explore" element={<ExplorePage />} />
-            <Route path="food-culture" element={<FoodCulturePage />} />
-            <Route
-              path="map"
-              element={
-                <Suspense fallback={<Loading />}>
-                  <MapPage />
-                </Suspense>
-              }
-            />
-            <Route path="places/:slug" element={<PlaceDetailPage />} />
-            <Route path="places/:slug/foods/:foodSlug" element={<PlaceDetailPage />} />
-            <Route path="auth" element={<AuthPage />} />
-            <Route
-              path="account"
-              element={
-                <RequireAuth>
-                  <AccountPage />
-                </RequireAuth>
-              }
-            />
-            <Route path="*" element={<NotFoundPage />} />
-          </Route>
-        </Routes>
+        <Suspense fallback={<Loading />}>
+          <Routes>
+            <Route path="/" element={<Navigate to={`/${detectLang()}`} replace />} />
+            <Route path="/q/:slug" element={<QrEntry />} />
+
+            {/* Admin Dashboard — SCR-A1..A8 (ADR-05) */}
+            <Route path="/admin/login" element={<AdminLoginPage />} />
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<AdminOverviewPage />} />
+              <Route path="places" element={<AdminPlacesPage />} />
+              <Route path="places/:id" element={<AdminPlaceEditorPage />} />
+              <Route path="narrations" element={<AdminNarrationsPage />} />
+              <Route path="languages" element={<AdminLanguagesPage />} />
+              <Route path="users" element={<AdminUsersPage />} />
+              <Route path="usage" element={<AdminUsagePage />} />
+              <Route path="*" element={<NotFoundPage />} />
+            </Route>
+
+            {/* Guest Web — SCR-01..08 */}
+            <Route path="/:lang" element={<LangLayout />}>
+              <Route index element={<HomePage />} />
+              <Route path="explore" element={<ExplorePage />} />
+              <Route path="food-culture" element={<FoodCulturePage />} />
+              <Route path="map" element={<MapPage />} />
+              <Route path="places/:slug" element={<PlaceDetailPage />} />
+              <Route path="places/:slug/foods/:foodSlug" element={<PlaceDetailPage />} />
+              <Route path="auth" element={<AuthPage />} />
+              <Route
+                path="account"
+                element={
+                  <RequireAuth>
+                    <AccountPage />
+                  </RequireAuth>
+                }
+              />
+              <Route path="*" element={<NotFoundPage />} />
+            </Route>
+          </Routes>
+        </Suspense>
       </BrowserRouter>
     </AuthProvider>
   )
