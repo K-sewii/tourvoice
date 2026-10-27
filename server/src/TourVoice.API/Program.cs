@@ -2,6 +2,8 @@ using TourVoice.BLL;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using TourVoice.API.Hubs;
+using TourVoice.API.Presence;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,13 +13,18 @@ builder.Services.AddHealthChecks();
 
 builder.Services.AddBusinessLayer(builder.Configuration);
 
+builder.Services.AddSignalR();                                         // <-- MOI
+builder.Services.AddSingleton<IPresenceTracker, PresenceTracker>();     // <-- MOI
+builder.Services.AddHostedService<PresenceBroadcastService>();          // <-- MOI
+
 const string DevCorsPolicy = "DevCors";
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(DevCorsPolicy, policy =>
         policy.WithOrigins("http://localhost:5173")
               .AllowAnyHeader()
-              .AllowAnyMethod());
+              .AllowAnyMethod()
+              .AllowCredentials());                                     // <-- MOI
 });
 
 var jwtKey = builder.Configuration["Jwt:Key"]!;
@@ -47,10 +54,11 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors(DevCorsPolicy);
 
-app.UseAuthentication();     // <-- 2 dong moi them o day
-app.UseAuthorization();      // <-- ngay sau UseCors, truoc MapControllers
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllers();
 app.MapHealthChecks("/health");
+app.MapHub<PresenceHub>("/hubs/presence");                              // <-- MOI
 
 app.Run();
