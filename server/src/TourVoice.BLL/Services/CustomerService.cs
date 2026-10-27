@@ -1,41 +1,69 @@
 using TourVoice.BLL.Dtos;
+using TourVoice.BLL.Exceptions;
+using TourVoice.BLL.Localization;
+using TourVoice.DAL.Entities;
 using TourVoice.DAL.Repositories;
 
 namespace TourVoice.BLL.Services;
 
 public class CustomerService : ICustomerService
 {
-    private readonly ICustomerRepository _repository;
-    public CustomerService(ICustomerRepository repository) => _repository = repository;
+    private readonly ICustomerRepository _customers;
+    private readonly IPlaceRepository _places;
 
-    public async Task<UserProfileDto?> GetProfileAsync(int userId)
+    public CustomerService(ICustomerRepository customers, IPlaceRepository places)
     {
-        var user = await _repository.GetUserByIdAsync(userId);
-        return user is null ? null :
-            new UserProfileDto(user.Id, user.Email, user.FullName, user.Role.ToString(), user.PreferredLanguageCode);
+        _customers = customers;
+        _places = places;
     }
 
-    public async Task<List<FavoritePlaceDto>> GetFavoritesAsync(int userId)
+    public async Task<UserProfileDto> GetProfileAsync(int userId)
     {
-        var favorites = await _repository.GetFavoritesAsync(userId);
-        // Luu y: Place chua duoc Include trong repo nay; Buoc sau se bo sung join neu can hien Name/Slug day du.
-        return favorites.Select(f => new FavoritePlaceDto(f.PlaceId, "", "", f.CreatedAt)).ToList();
+        var user = await _customers.GetUserByIdAsync(userId)
+            ?? throw new UnauthorizedException("account_missing", "Tài khoản không còn tồn tại.");
+        return new UserProfileDto(user.Id, user.Email, user.FullName, user.Role.ToString(), user.PreferredLanguageCode);
     }
 
-    public Task AddFavoriteAsync(int userId, int placeId) => _repository.AddFavoriteAsync(userId, placeId);
-    public Task RemoveFavoriteAsync(int userId, int placeId) => _repository.RemoveFavoriteAsync(userId, placeId);
+    public async Task<List<FavoritePlaceDto>> GetFavoritesAsync(int userId, string lang) =>
+        (await _customers.GetFavoritesAsync(userId))
+            .Select(f => new FavoritePlaceDto(ToMyPlace(f.Place, lang), f.CreatedAt)).ToList();
 
-    public async Task<List<VisitedPlaceDto>> GetVisitsAsync(int userId)
+    public async Task AddFavoriteAsync(int userId, int placeId)
     {
-        var visits = await _repository.GetVisitsAsync(userId);
-        return visits.Select(v => new VisitedPlaceDto(v.PlaceId, "", "", v.VisitedAt)).ToList();
+        await EnsurePublishedAsync(placeId);
+        await _customers.AddFavoriteAsync(userId, placeId);
     }
 
-    public Task MarkVisitedAsync(int userId, int placeId) => _repository.MarkVisitedAsync(userId, placeId);
+    public Task RemoveFavoriteAsync(int userId, int placeId) => _customers.RemoveFavoriteAsync(userId, placeId);
 
-    public async Task<List<ListenHistoryDto>> GetHistoryAsync(int userId)
+    public async Task<VisitsDto> GetVisitsAsync(int userId, string lang)
     {
-        var history = await _repository.GetHistoryAsync(userId);
-        return history.Select(h => new ListenHistoryDto(h.PlaceId, h.LanguageCode, h.ListenedSeconds, h.PlayedAt)).ToList();
+        var visits = await _customers.GetVisitsAsync(userId);
+        var published = await _places.CountPublishedDestinationsAsync();
+        var visitedDestinations = visits.Count(v =>
+            v.Place.Kind == PlaceKind.Destination && v.Place.Status == PlaceStatus.Published);
+
+        return new VisitsDto(
+            visits.Select(v => new VisitedPlaceDto(ToMyPlace(v.Place, lang), v.VisitedAt)).ToList(),
+            visitedDestinations, published);
     }
+
+    public async Task MarkVisitedAsync(int userId, int placeId)
+    {
+        await EnsurePublishedAsync(placeId);
+        await _customers.MarkVisitedAsync(userId, placeId);
+    }
+
+    public async Task<List<ListenHistoryDto>> GetHistoryAsync(int userId, string lang) =>
+        (await _customers.GetHistoryAsync(userId))
+            .Select(h => new ListenHistoryDto(ToMyPlace(h.Place, lang), h.LanguageCode, h.ListenedSeconds, h.PlayedAt))
+            .ToList();
+
+    private async Task EnsurePublishedAsync(int placeId)
+    {
+        if (!await _places.IsPublishedAsync(placeId)) throw new PlaceNotFoundException();
+    }
+
+    private static MyPlaceDto ToMyPlace(Place p, string lang) =>
+        new(p.Id, p.Slug, Localizer.Name(p, lang), p.Kind.ToString(), p.Parent?.Slug);
 }

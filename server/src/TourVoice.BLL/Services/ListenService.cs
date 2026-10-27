@@ -1,4 +1,5 @@
 using TourVoice.BLL.Dtos;
+using TourVoice.BLL.Exceptions;
 using TourVoice.DAL.Entities;
 using TourVoice.DAL.Repositories;
 
@@ -6,31 +7,39 @@ namespace TourVoice.BLL.Services;
 
 public class ListenService : IListenService
 {
-    private readonly IPlaceRepository _placeRepository;
-    private readonly IListenEventRepository _listenEventRepository;
+    public const int MinListenSeconds = 10;    // BR-09
+    public const int MaxListenSeconds = 3600;  // bai 4.000 ky tu doc o toc do 0,8 van duoi 10 phut
 
-    public ListenService(IPlaceRepository placeRepository, IListenEventRepository listenEventRepository)
+    private readonly IPlaceRepository _places;
+    private readonly ILanguageRepository _languages;
+    private readonly IListenEventRepository _listenEvents;
+
+    public ListenService(IPlaceRepository places, ILanguageRepository languages, IListenEventRepository listenEvents)
     {
-        _placeRepository = placeRepository;
-        _listenEventRepository = listenEventRepository;
+        _places = places;
+        _languages = languages;
+        _listenEvents = listenEvents;
     }
 
-    public async Task<bool> RecordListenAsync(string slug, RecordListenRequestDto request, int? userId)
+    public async Task RecordAsync(ListenEventRequestDto request, int? userId)
     {
-        var placeId = await _placeRepository.GetPublishedIdBySlugAsync(slug);
-        if (placeId is null) return false;
+        if (request.ListenedSeconds is < MinListenSeconds or > MaxListenSeconds)
+            throw new ValidationException("invalid_duration",
+                $"Lượt nghe phải từ {MinListenSeconds} đến {MaxListenSeconds} giây.");
 
-        var source = Enum.TryParse<ListenSource>(request.Source, ignoreCase: true, out var parsed)
-            ? parsed : ListenSource.Mp3;
+        var lang = request.LanguageCode?.Trim().ToLowerInvariant() ?? "";
+        if (!(await _languages.GetEnabledAsync()).Any(l => l.Code == lang))
+            throw new ValidationException("invalid_language", "Ngôn ngữ không được hỗ trợ.");
 
-        await _listenEventRepository.AddAsync(new ListenEvent
+        var placeId = await _places.GetPublishedIdBySlugAsync(request.PlaceSlug ?? "")
+            ?? throw new PlaceNotFoundException();
+
+        await _listenEvents.AddAsync(new ListenEvent
         {
-            PlaceId = placeId.Value,
-            LanguageCode = request.LanguageCode,
+            PlaceId = placeId,
+            LanguageCode = lang,
             UserId = userId,
             ListenedSeconds = request.ListenedSeconds,
-            Source = source
         });
-        return true;
     }
 }

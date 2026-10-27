@@ -6,6 +6,8 @@ namespace TourVoice.DAL.Repositories;
 
 public class CustomerRepository : ICustomerRepository
 {
+    private const int HistoryLimit = 50;
+
     private readonly TourVoiceDbContext _db;
     public CustomerRepository(TourVoiceDbContext db) => _db = db;
 
@@ -13,7 +15,7 @@ public class CustomerRepository : ICustomerRepository
         _db.Users.FirstOrDefaultAsync(u => u.Email == email);
 
     public Task<User?> GetUserByIdAsync(int id) =>
-        _db.Users.FirstOrDefaultAsync(u => u.Id == id);
+        _db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id);
 
     public Task<bool> EmailExistsAsync(string email) =>
         _db.Users.AnyAsync(u => u.Email == email);
@@ -25,7 +27,13 @@ public class CustomerRepository : ICustomerRepository
     }
 
     public Task<List<Favorite>> GetFavoritesAsync(int userId) =>
-        _db.Favorites.AsNoTracking().Where(f => f.UserId == userId).ToListAsync();
+        _db.Favorites.AsNoTracking()
+            .Include(f => f.Place).ThenInclude(p => p.Translations)
+            .Include(f => f.Place).ThenInclude(p => p.Parent)
+            .Where(f => f.UserId == userId)
+            .OrderByDescending(f => f.CreatedAt)
+            .AsSplitQuery()
+            .ToListAsync();
 
     public Task<bool> IsFavoriteAsync(int userId, int placeId) =>
         _db.Favorites.AnyAsync(f => f.UserId == userId && f.PlaceId == placeId);
@@ -46,20 +54,31 @@ public class CustomerRepository : ICustomerRepository
     }
 
     public Task<List<Visit>> GetVisitsAsync(int userId) =>
-        _db.Visits.AsNoTracking().Where(v => v.UserId == userId).ToListAsync();
+        _db.Visits.AsNoTracking()
+            .Include(v => v.Place).ThenInclude(p => p.Translations)
+            .Include(v => v.Place).ThenInclude(p => p.Parent)
+            .Where(v => v.UserId == userId)
+            .OrderByDescending(v => v.VisitedAt)
+            .AsSplitQuery()
+            .ToListAsync();
+
+    public Task<bool> IsVisitedAsync(int userId, int placeId) =>
+        _db.Visits.AnyAsync(v => v.UserId == userId && v.PlaceId == placeId);
 
     public async Task MarkVisitedAsync(int userId, int placeId)
     {
-        var exists = await _db.Visits.AnyAsync(v => v.UserId == userId && v.PlaceId == placeId);
-        if (exists) return;
+        if (await IsVisitedAsync(userId, placeId)) return;
         _db.Visits.Add(new Visit { UserId = userId, PlaceId = placeId });
         await _db.SaveChangesAsync();
     }
 
     public Task<List<ListenEvent>> GetHistoryAsync(int userId) =>
         _db.ListenEvents.AsNoTracking()
+            .Include(l => l.Place).ThenInclude(p => p.Translations)
+            .Include(l => l.Place).ThenInclude(p => p.Parent)
             .Where(l => l.UserId == userId)
             .OrderByDescending(l => l.PlayedAt)
-            .Take(50)
+            .Take(HistoryLimit)
+            .AsSplitQuery()
             .ToListAsync();
 }
