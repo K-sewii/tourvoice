@@ -1,7 +1,9 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using System.Diagnostics.CodeAnalysis;
 using TourVoice.BLL.Auth;
+using TourVoice.BLL.Presence;
 using TourVoice.BLL.Services;
 using TourVoice.BLL.Translation;
 using TourVoice.DAL;
@@ -25,6 +27,10 @@ public static class DependencyInjection
         services.AddScoped<IAdminPlaceService, AdminPlaceService>();
         services.AddScoped<INarrationPipelineService, NarrationPipelineService>();
         services.AddScoped<IListenService, ListenService>();
+        services.AddScoped<IAdminUserService, AdminUserService>();
+        services.AddScoped<IAdminDashboardService, AdminDashboardService>();
+        services.AddScoped<IPresenceService, PresenceService>();
+        services.TryAddSingleton(TimeProvider.System);
 
         services.AddHttpClient<ITranslationProvider, MyMemoryTranslationProvider>(client =>
         {

@@ -2,7 +2,6 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TourVoice.DAL.Data;
 
@@ -18,9 +17,7 @@ namespace TourVoice.DAL.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("ProductVersion", "10.0.14")
-                .HasAnnotation("Relational:MaxIdentifierLength", 128);
-
-            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+                .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
             modelBuilder.Entity("TourVoice.DAL.Entities.AccessSession", b =>
                 {
@@ -28,30 +25,35 @@ namespace TourVoice.DAL.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
-
                     b.Property<string>("DeviceKey")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("char(64)");
 
                     b.Property<DateTime?>("EndedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<int?>("EntryPlaceId")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("LastSeenAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime(6)");
 
-                    b.Property<int>("Source")
-                        .HasColumnType("int");
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
 
                     b.Property<DateTime>("StartedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime(6)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("DeviceKey");
+
+                    b.HasIndex("EntryPlaceId");
+
+                    b.HasIndex("StartedAt")
+                        .HasDatabaseName("IX_AccessSessions_StartedAt");
 
                     b.ToTable("AccessSessions");
                 });
@@ -65,9 +67,11 @@ namespace TourVoice.DAL.Migrations
                         .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime(6)");
 
                     b.HasKey("UserId", "PlaceId");
+
+                    b.HasIndex("PlaceId");
 
                     b.ToTable("Favorites");
                 });
@@ -75,18 +79,21 @@ namespace TourVoice.DAL.Migrations
             modelBuilder.Entity("TourVoice.DAL.Entities.Language", b =>
                 {
                     b.Property<string>("Code")
-                        .HasColumnType("nvarchar(450)");
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)");
 
                     b.Property<bool>("IsEnabled")
-                        .HasColumnType("bit");
+                        .HasColumnType("tinyint(1)");
 
-                    b.Property<string>("TranslatorCode")
+                    b.Property<string>("MtCode")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)");
 
-                    b.Property<string>("VoiceName")
+                    b.Property<string>("SpeechLang")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)");
 
                     b.HasKey("Code");
 
@@ -99,11 +106,10 @@ namespace TourVoice.DAL.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
-
                     b.Property<string>("LanguageCode")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)");
 
                     b.Property<int>("ListenedSeconds")
                         .HasColumnType("int");
@@ -112,15 +118,17 @@ namespace TourVoice.DAL.Migrations
                         .HasColumnType("int");
 
                     b.Property<DateTime>("PlayedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("Source")
-                        .HasColumnType("int");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<int?>("UserId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("PlaceId");
+
+                    b.HasIndex("UserId", "PlayedAt")
+                        .HasDatabaseName("IX_ListenEvents_UserId_PlayedAt");
 
                     b.ToTable("ListenEvents");
                 });
@@ -131,22 +139,26 @@ namespace TourVoice.DAL.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
                     b.Property<string>("Address")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(300)
+                        .HasColumnType("varchar(300)");
 
                     b.Property<string>("Category")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(30)
+                        .HasColumnType("varchar(30)");
 
                     b.Property<string>("CoverImageUrl")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
 
                     b.Property<string>("FoodType")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(30)
+                        .HasColumnType("varchar(30)");
 
-                    b.Property<int>("Kind")
-                        .HasColumnType("int");
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
 
                     b.Property<decimal>("Latitude")
                         .HasColumnType("decimal(9,6)");
@@ -155,32 +167,46 @@ namespace TourVoice.DAL.Migrations
                         .HasColumnType("decimal(9,6)");
 
                     b.Property<string>("OpeningHours")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
 
                     b.Property<int?>("ParentId")
                         .HasColumnType("int");
 
                     b.Property<string>("PriceRange")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
 
                     b.Property<string>("Slug")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
 
                     b.Property<int>("SortOrder")
                         .HasColumnType("int");
 
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ParentId");
 
                     b.HasIndex("Slug")
                         .IsUnique();
 
-                    b.ToTable("Places");
+                    b.HasIndex("Status", "Category")
+                        .HasDatabaseName("IX_Places_Status_Category");
+
+                    b.HasIndex("ParentId", "Status", "SortOrder")
+                        .HasDatabaseName("IX_Places_ParentId_Status_SortOrder");
+
+                    b.ToTable("Places", t =>
+                        {
+                            t.HasCheckConstraint("CK_Places_Kind_Parent", "(`Kind` = 'Destination' AND `ParentId` IS NULL) OR (`Kind` = 'Food' AND `ParentId` IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_Places_ServiceArea", "`Latitude` BETWEEN 10.730 AND 10.765 AND `Longitude` BETWEEN 106.615 AND 106.665");
+                        });
                 });
 
             modelBuilder.Entity("TourVoice.DAL.Entities.PlaceTranslation", b =>
@@ -189,33 +215,38 @@ namespace TourVoice.DAL.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("LanguageCode")
-                        .HasColumnType("nvarchar(450)");
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)");
 
-                    b.Property<int?>("AudioDurationSeconds")
-                        .HasColumnType("int");
-
-                    b.Property<string>("AudioHash")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("AudioUrl")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<decimal?>("MachineMatch")
+                        .HasColumnType("decimal(5,4)");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
 
                     b.Property<string>("NarrationText")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(4000)
+                        .HasColumnType("varchar(4000)");
 
-                    b.Property<int>("Source")
-                        .HasColumnType("int");
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
 
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
+                    b.Property<string>("SourceHash")
+                        .HasColumnType("char(64)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
 
                     b.HasKey("PlaceId", "LanguageCode");
 
-                    b.HasIndex("LanguageCode");
+                    b.HasIndex("LanguageCode", "Status")
+                        .HasDatabaseName("IX_PT_LanguageCode_Status");
 
                     b.ToTable("PlaceTranslations");
                 });
@@ -226,8 +257,6 @@ namespace TourVoice.DAL.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
-
                     b.Property<int>("Characters")
                         .HasColumnType("int");
 
@@ -235,18 +264,24 @@ namespace TourVoice.DAL.Migrations
                         .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("ErrorCode")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
 
-                    b.Property<int>("Service")
-                        .HasColumnType("int");
+                    b.Property<string>("Service")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
 
                     b.Property<bool>("Success")
-                        .HasColumnType("bit");
+                        .HasColumnType("tinyint(1)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Service", "CreatedAt")
+                        .HasDatabaseName("IX_UsageLogs_Service_CreatedAt");
 
                     b.ToTable("UsageLogs");
                 });
@@ -257,28 +292,32 @@ namespace TourVoice.DAL.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasMaxLength(254)
+                        .HasColumnType("varchar(254)");
 
                     b.Property<string>("FullName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
 
                     b.Property<string>("PreferredLanguageCode")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)");
 
-                    b.Property<int>("Role")
-                        .HasColumnType("int");
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
 
                     b.HasKey("Id");
 
@@ -297,11 +336,54 @@ namespace TourVoice.DAL.Migrations
                         .HasColumnType("int");
 
                     b.Property<DateTime>("VisitedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime(6)");
 
                     b.HasKey("UserId", "PlaceId");
 
+                    b.HasIndex("PlaceId");
+
                     b.ToTable("Visits");
+                });
+
+            modelBuilder.Entity("TourVoice.DAL.Entities.AccessSession", b =>
+                {
+                    b.HasOne("TourVoice.DAL.Entities.Place", null)
+                        .WithMany()
+                        .HasForeignKey("EntryPlaceId")
+                        .OnDelete(DeleteBehavior.SetNull);
+                });
+
+            modelBuilder.Entity("TourVoice.DAL.Entities.Favorite", b =>
+                {
+                    b.HasOne("TourVoice.DAL.Entities.Place", "Place")
+                        .WithMany()
+                        .HasForeignKey("PlaceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TourVoice.DAL.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Place");
+                });
+
+            modelBuilder.Entity("TourVoice.DAL.Entities.ListenEvent", b =>
+                {
+                    b.HasOne("TourVoice.DAL.Entities.Place", "Place")
+                        .WithMany()
+                        .HasForeignKey("PlaceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TourVoice.DAL.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Place");
                 });
 
             modelBuilder.Entity("TourVoice.DAL.Entities.Place", b =>
@@ -329,6 +411,23 @@ namespace TourVoice.DAL.Migrations
                         .IsRequired();
 
                     b.Navigation("Language");
+
+                    b.Navigation("Place");
+                });
+
+            modelBuilder.Entity("TourVoice.DAL.Entities.Visit", b =>
+                {
+                    b.HasOne("TourVoice.DAL.Entities.Place", "Place")
+                        .WithMany()
+                        .HasForeignKey("PlaceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TourVoice.DAL.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Place");
                 });
