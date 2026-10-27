@@ -69,24 +69,28 @@ describe('NarrationPlayer', () => {
     expect(mock.spoken[0].rate).toBe(1.25)
   })
 
-  it('shows the transcript and a hint when the device has no voice for the language', async () => {
+  it('falls back to speechLang when the device has no matching voice object', async () => {
     mock = installSpeechMock(['en-US'])
+    const user = userEvent.setup()
     renderPlayer()
 
-    expect(await screen.findByText(/has no Tiếng Việt voice/)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Play narration' })).toBeDisabled()
-    expect(screen.getByText('Câu ba.')).toBeVisible()
+    const play = await screen.findByRole('button', { name: 'Play narration' })
+    expect(play).toBeEnabled()
+    await user.click(play)
+    expect(mock.spoken).toHaveLength(1)
+    expect(mock.spoken[0].lang).toBe('vi-VN')
   })
 
   it('picks up a voice that arrives after the initial timeout', async () => {
     mock = installSpeechMock([])
+    const user = userEvent.setup()
     renderPlayer()
 
-    expect(await screen.findByText(/has no Tiếng Việt voice/, {}, { timeout: 3000 })).toBeInTheDocument()
     act(() => mock!.addVoices(['vi-VN']))
-
-    expect(screen.queryByText(/has no Tiếng Việt voice/)).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Play narration' })).toBeEnabled()
+    const play = await screen.findByRole('button', { name: 'Play narration' })
+    expect(play).toBeEnabled()
+    await user.click(play)
+    expect(mock.spoken[0].voice?.lang).toBe('vi-VN')
   })
 
   it('start() via ref begins playback but never pauses it', async () => {

@@ -15,7 +15,14 @@ import { useAsync } from '../hooks/useAsync'
 import { useDistanceFormatter } from '../hooks/useGeolocation'
 import { useLang, useLocalePath } from '../hooks/useLang'
 import { directionsUrl } from '../lib/geo'
-import { categoryLabel, foodTypeLabel, joinMeta } from '../lib/labels'
+import {
+  categoryLabel,
+  foodTypeLabel,
+  joinMeta,
+  localizeAddress,
+  localizePrice,
+  localizeTitle,
+} from '../lib/labels'
 import { LANG_INFO, isLang } from '../lib/languages'
 
 /**
@@ -58,7 +65,7 @@ export default function PlaceDetailPage() {
 
   return (
     <PlaceView
-      key={`${place.data.slug}:${place.data.languageCode}`}
+      key={`${place.data.slug}:${lang}:${place.data.languageCode}`}
       place={place.data}
       autoplay={!!state?.autoplay}
     />
@@ -74,6 +81,10 @@ function PlaceView({ place, autoplay }: { place: PlaceDetail; autoplay: boolean 
   const contentLang = isLang(place.languageCode) ? place.languageCode : 'vi'
   const chip = isFood ? foodTypeLabel(t, place.foodType) : categoryLabel(t, place.category)
   const away = distance(place.latitude, place.longitude)
+  const displayTitle = localizeTitle(place.name, lang)
+  const displayParentName = localizeTitle(place.parentName ?? place.parentSlug, lang)
+  const displayAddress = localizeAddress(place.address, lang)
+  const displayPrice = localizePrice(place.priceRange, lang)
 
   const onListened = useCallback(
     (seconds: number) =>
@@ -103,12 +114,12 @@ function PlaceView({ place, autoplay }: { place: PlaceDetail; autoplay: boolean 
           <div>
             {place.parentSlug && (
               <p className="breadcrumb">
-                <Link to={to(`/places/${place.parentSlug}`)}>‹ {place.parentName ?? place.parentSlug}</Link>
+                <Link to={to(`/places/${place.parentSlug}`)}>‹ {displayParentName}</Link>
               </p>
             )}
-            <h1 className="detail-title">{place.name}</h1>
-            {(place.address || away) && (
-              <p className="detail-sub">{joinMeta(place.address, away && t('common.away', { distance: away }))}</p>
+            <h1 className="detail-title">{displayTitle}</h1>
+            {(displayAddress || away) && (
+              <p className="detail-sub">{joinMeta(displayAddress, away && t('common.away', { distance: away }))}</p>
             )}
 
             <div className="detail-actions">
@@ -136,7 +147,7 @@ function PlaceView({ place, autoplay }: { place: PlaceDetail; autoplay: boolean 
               </p>
             )}
 
-            {(place.openingHours || place.priceRange) && (
+            {(place.openingHours || displayPrice) && (
               <dl className="facts">
                 {place.openingHours && (
                   <div>
@@ -144,10 +155,10 @@ function PlaceView({ place, autoplay }: { place: PlaceDetail; autoplay: boolean 
                     <dd>{place.openingHours}</dd>
                   </div>
                 )}
-                {place.priceRange && (
+                {displayPrice && (
                   <div>
                     <dt>{t('place.price')}</dt>
-                    <dd>{place.priceRange}</dd>
+                    <dd>{displayPrice}</dd>
                   </div>
                 )}
               </dl>
@@ -179,9 +190,9 @@ function PlaceView({ place, autoplay }: { place: PlaceDetail; autoplay: boolean 
                       <PlaceCard
                         key={f.id}
                         to={to(`/places/${place.slug}/foods/${f.slug}`)}
-                        title={f.name}
+                        title={localizeTitle(f.name, lang)}
                         chip={foodTypeLabel(t, f.foodType)}
-                        meta={joinMeta(f.priceRange, f.openingHours)}
+                        meta={joinMeta(localizePrice(f.priceRange, lang), f.openingHours)}
                         coverImageUrl={f.coverImageUrl}
                       />
                     ))}
