@@ -13,13 +13,21 @@ public class UsageLogRepository : IUsageLogRepository
     {
         var todayUtc = DateTime.UtcNow.Date;
         return await _db.UsageLogs
-            .Where(u => u.Service == service && u.Success && u.CreatedAt >= todayUtc)
+            .Where(u => u.Service == service && u.CreatedAt >= todayUtc)
             .SumAsync(u => (int?)u.Characters) ?? 0;
     }
 
-    public async Task AddAsync(UsageLog log)
-    {
-        _db.UsageLogs.Add(log);
-        await _db.SaveChangesAsync();
-    }
+    public void Add(UsageLog log) => _db.UsageLogs.Add(log);
+
+    public Task<List<UsageLog>> GetSinceAsync(UsageService service, DateTime fromUtc) =>
+        _db.UsageLogs.AsNoTracking()
+            .Where(u => u.Service == service && u.CreatedAt >= fromUtc)
+            .ToListAsync();
+
+    public Task<List<UsageLog>> GetRecentAsync(UsageService service, int count) =>
+        _db.UsageLogs.AsNoTracking()
+            .Where(u => u.Service == service)
+            .OrderByDescending(u => u.CreatedAt).ThenByDescending(u => u.Id)
+            .Take(count)
+            .ToListAsync();
 }
