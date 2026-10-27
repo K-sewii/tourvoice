@@ -5,7 +5,9 @@ namespace TourVoice.DAL.Repositories;
 public interface IPlaceRepository
 {
     Task<List<Place>> GetPublishedDestinationsAsync();
+    Task<List<Place>> GetPublishedFoodsAsync();
     Task<Place?> GetPublishedBySlugAsync(string slug);
+    Task<int?> GetPublishedIdBySlugAsync(string slug);
 
     // Khong AsNoTracking - dung cho admin sua truc tiep roi SaveChangesAsync
     Task<Place?> GetByIdAsync(int id);
