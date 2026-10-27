@@ -20,7 +20,16 @@ public class PlaceRepository : IPlaceRepository
             .ToListAsync();
     }
 
-      public async Task<Place?> GetPublishedBySlugAsync(string slug)
+    public async Task<List<Place>> GetPublishedFoodsAsync()
+    {
+        return await _db.Places.AsNoTracking()
+            .Include(p => p.Translations)
+            .Where(p => p.Status == PlaceStatus.Published && p.Kind == PlaceKind.Food)
+            .OrderBy(p => p.SortOrder)
+            .ToListAsync();
+    }
+
+    public async Task<Place?> GetPublishedBySlugAsync(string slug)
     {
         return await _db.Places.AsNoTracking()
             .Include(p => p.Translations)
@@ -28,6 +37,12 @@ public class PlaceRepository : IPlaceRepository
                 .ThenInclude(c => c.Translations)
             .FirstOrDefaultAsync(p => p.Slug == slug && p.Status == PlaceStatus.Published);
     }
+
+    public Task<int?> GetPublishedIdBySlugAsync(string slug) =>
+        _db.Places.AsNoTracking()
+            .Where(p => p.Slug == slug && p.Status == PlaceStatus.Published)
+            .Select(p => (int?)p.Id)
+            .FirstOrDefaultAsync();
 
     public Task<Place?> GetByIdAsync(int id) =>
         _db.Places.Include(p => p.Translations).FirstOrDefaultAsync(p => p.Id == id);
