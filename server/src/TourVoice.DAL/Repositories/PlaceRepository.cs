@@ -27,9 +27,24 @@ public class PlaceRepository : IPlaceRepository
             .FirstOrDefaultAsync(p => p.Slug == slug && p.Status == PlaceStatus.Published);
     }
 
-    // Khong AsNoTracking - dung cho admin sua truc tiep roi SaveChangesAsync
     public Task<Place?> GetByIdAsync(int id) =>
         _db.Places.Include(p => p.Translations).FirstOrDefaultAsync(p => p.Id == id);
 
     public Task SaveChangesAsync() => _db.SaveChangesAsync();
+
+    public async Task<(List<Place> Items, int Total)> GetAdminListAsync(int page, int pageSize)
+    {
+        var query = _db.Places.AsNoTracking().Include(p => p.Translations).OrderBy(p => p.SortOrder);
+        var total = await query.CountAsync();
+        var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+        return (items, total);
+    }
+
+    public Task<bool> SlugExistsAsync(string slug) => _db.Places.AnyAsync(p => p.Slug == slug);
+
+    public async Task AddAsync(Place place)
+    {
+        _db.Places.Add(place);
+        await _db.SaveChangesAsync();
+    }
 }
