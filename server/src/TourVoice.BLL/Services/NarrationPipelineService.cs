@@ -193,7 +193,7 @@ public partial class NarrationPipelineService : INarrationPipelineService
                 var t = p.Translations.FirstOrDefault(x => x.LanguageCode == l.Code);
                 var has = TranslationRules.HasText(t);
                 cells[l.Code] = new MatrixCellDto(
-                    !has ? "None" : t!.Status.ToString(), TranslationRules.IsStale(t!, vi) && has);
+                    !has ? "None" : t!.Status.ToString(), has && TranslationRules.IsStale(t!, vi));
                 if (l.Code != SourceLanguage && hash is not null && NeedsTranslation(t, hash)) needsTranslation = true;
             }
 
