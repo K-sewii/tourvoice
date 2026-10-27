@@ -14,6 +14,9 @@ public class Place
     public string? CoverImageUrl { get; set; }
     public PlaceStatus Status { get; set; } = PlaceStatus.Draft;
     public int SortOrder { get; set; }
+    public string? Address { get; set; }
+    public string? PriceRange { get; set; }
+    public string? OpeningHours { get; set; }
 
     public ICollection<Place> Children { get; set; } = new List<Place>();
     public ICollection<PlaceTranslation> Translations { get; set; } = new List<PlaceTranslation>();

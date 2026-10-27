@@ -20,10 +20,12 @@ public class PlaceRepository : IPlaceRepository
             .ToListAsync();
     }
 
-    public async Task<Place?> GetPublishedBySlugAsync(string slug)
+      public async Task<Place?> GetPublishedBySlugAsync(string slug)
     {
         return await _db.Places.AsNoTracking()
             .Include(p => p.Translations)
+            .Include(p => p.Children.Where(c => c.Status == PlaceStatus.Published))
+                .ThenInclude(c => c.Translations)
             .FirstOrDefaultAsync(p => p.Slug == slug && p.Status == PlaceStatus.Published);
     }
 
