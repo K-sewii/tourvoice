@@ -18,7 +18,8 @@ public class PlaceService : IPlaceService
         {
             var t = ResolveTranslation(p, lang).translation;
             return new PlaceSummaryDto(p.Id, p.Slug, t?.Name ?? p.Slug,
-                p.Category, p.CoverImageUrl, p.Latitude, p.Longitude);
+                p.Category, p.CoverImageUrl, p.Latitude, p.Longitude,
+                p.Kind.ToString(), p.FoodType, p.Address, p.PriceRange, p.OpeningHours);
         }).ToList();
     }
 
@@ -30,9 +31,20 @@ public class PlaceService : IPlaceService
         var (translation, usedLang, fallbackUsed) = ResolveTranslation(place, lang);
         if (translation is null) return null;
 
+        var foodPlaces = place.Children
+            .Where(c => c.Kind == PlaceKind.Food)
+            .Select(c =>
+            {
+                var ct = ResolveTranslation(c, lang).translation;
+                return new FoodPlaceSummaryDto(c.Id, c.Slug, ct?.Name ?? c.Slug, c.FoodType,
+                    c.CoverImageUrl, c.Address, c.PriceRange, c.OpeningHours);
+            }).ToList();
+
         return new PlaceDetailDto(place.Id, place.Slug, translation.Name,
             translation.NarrationText, translation.AudioUrl, translation.AudioDurationSeconds,
-            place.Category, place.Latitude, place.Longitude, usedLang, fallbackUsed);
+            place.Category, place.Latitude, place.Longitude, usedLang, fallbackUsed,
+            place.Kind.ToString(), place.FoodType, place.Address, place.PriceRange, place.OpeningHours,
+            foodPlaces);
     }
 
     private static (PlaceTranslation? translation, string languageUsed, bool fallbackUsed)

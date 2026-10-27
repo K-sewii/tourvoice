@@ -39,6 +39,9 @@ public class AdminPlaceService : IAdminPlaceService
             Latitude = request.Latitude,
             Longitude = request.Longitude,
             SortOrder = request.SortOrder,
+            Address = request.Address,
+            PriceRange = request.PriceRange,
+            OpeningHours = request.OpeningHours,
             Status = PlaceStatus.Draft
         };
         await _repository.AddAsync(place);
@@ -56,6 +59,9 @@ public class AdminPlaceService : IAdminPlaceService
         place.Longitude = request.Longitude;
         place.CoverImageUrl = request.CoverImageUrl;
         place.SortOrder = request.SortOrder;
+        place.Address = request.Address;
+        place.PriceRange = request.PriceRange;
+        place.OpeningHours = request.OpeningHours;
 
         await _repository.SaveChangesAsync();
         return ToDetailDto(place);
@@ -81,5 +87,6 @@ public class AdminPlaceService : IAdminPlaceService
 
     private static AdminPlaceDetailDto ToDetailDto(Place p) => new(
         p.Id, p.Slug, p.Kind.ToString(), p.Category, p.FoodType, p.ParentId,
-        p.Latitude, p.Longitude, p.CoverImageUrl, p.Status.ToString(), p.SortOrder);
+        p.Latitude, p.Longitude, p.CoverImageUrl, p.Status.ToString(), p.SortOrder,
+        p.Address, p.PriceRange, p.OpeningHours);
 }
