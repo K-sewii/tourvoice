@@ -23,6 +23,18 @@ public class PlaceService : IPlaceService
         }).ToList();
     }
 
+    public async Task<List<FoodPlaceSummaryDto>> GetPublishedFoodsAsync(string lang)
+    {
+        var foods = await _repository.GetPublishedFoodsAsync();
+
+        return foods.Select(p =>
+        {
+            var t = ResolveTranslation(p, lang).translation;
+            return new FoodPlaceSummaryDto(p.Id, p.Slug, t?.Name ?? p.Slug, p.FoodType,
+                p.CoverImageUrl, p.Address, p.PriceRange, p.OpeningHours);
+        }).ToList();
+    }
+
     public async Task<PlaceDetailDto?> GetPlaceDetailAsync(string slug, string lang)
     {
         var place = await _repository.GetPublishedBySlugAsync(slug);
