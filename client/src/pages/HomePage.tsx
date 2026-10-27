@@ -7,7 +7,7 @@ import { CardSkeletons, ErrorState } from '../components/States'
 import { useAsync } from '../hooks/useAsync'
 import { useDistanceFormatter } from '../hooks/useGeolocation'
 import { useLang, useLocalePath } from '../hooks/useLang'
-import { categoryLabel, joinMeta } from '../lib/labels'
+import { categoryLabel, joinMeta, localizeAddress, localizeTitle } from '../lib/labels'
 
 /** SCR-01 */
 export default function HomePage() {
@@ -60,9 +60,9 @@ export default function HomePage() {
               <PlaceCard
                 key={p.id}
                 to={to(`/places/${p.slug}`)}
-                title={p.name}
+                title={localizeTitle(p.name, lang)}
                 chip={categoryLabel(t, p.category)}
-                meta={joinMeta(p.address?.split(',')[0], distance(p.latitude, p.longitude))}
+                meta={joinMeta(localizeAddress(p.address?.split(',')[0], lang), distance(p.latitude, p.longitude))}
                 coverImageUrl={p.coverImageUrl}
                 audioBadge
               />
