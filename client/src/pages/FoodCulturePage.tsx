@@ -7,7 +7,7 @@ import { PlaceCard } from '../components/PlaceCard'
 import { CardSkeletons, Empty, ErrorState } from '../components/States'
 import { useAsync } from '../hooks/useAsync'
 import { useLang, useLocalePath } from '../hooks/useLang'
-import { foodTypeLabel, joinMeta } from '../lib/labels'
+import { foodTypeLabel, joinMeta, localizePrice, localizeTitle } from '../lib/labels'
 
 /** SCR-08 — food spots grouped by the destination that hosts them. */
 export default function FoodCulturePage() {
@@ -28,12 +28,12 @@ export default function FoodCulturePage() {
     for (const f of foods) {
       if (type && f.foodType !== type) continue
       const slug = f.parentSlug!
-      const g = byParent.get(slug) ?? { name: f.parentName ?? slug, slug, foods: [] }
+      const g = byParent.get(slug) ?? { name: localizeTitle(f.parentName ?? slug, lang), slug, foods: [] }
       g.foods.push(f)
       byParent.set(slug, g)
     }
     return [...byParent.values()]
-  }, [foods, type])
+  }, [foods, lang, type])
 
   return (
     <div className="container">
@@ -70,9 +70,9 @@ export default function FoodCulturePage() {
               <PlaceCard
                 key={f.id}
                 to={to(placePath(f))}
-                title={f.name}
+                title={localizeTitle(f.name, lang)}
                 chip={foodTypeLabel(t, f.foodType)}
-                meta={joinMeta(f.priceRange, f.openingHours)}
+                meta={joinMeta(localizePrice(f.priceRange, lang), f.openingHours)}
                 coverImageUrl={f.coverImageUrl}
               />
             ))}

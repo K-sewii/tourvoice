@@ -30,9 +30,13 @@ export function setUnauthorizedHandler(handler: (() => void) | null) {
 
 export class ApiError extends Error {
   readonly status: number
-  constructor(status: number, message: string) {
+  readonly code?: string
+  readonly missing?: string[]
+  constructor(status: number, message: string, code?: string, missing?: string[]) {
     super(message)
     this.status = status
+    this.code = code
+    this.missing = missing
   }
 }
 
@@ -40,8 +44,9 @@ type Method = 'GET' | 'POST' | 'PUT' | 'DELETE'
 
 export async function request<T>(method: Method, path: string, body?: unknown, signal?: AbortSignal): Promise<T> {
   // X-Device-Id: presence key and per-device rate limit (PRD §8: 120 req/min per device).
+  const isFormData = typeof FormData !== 'undefined' && body instanceof FormData
   const headers: Record<string, string> = { Accept: 'application/json', 'X-Device-Id': getDeviceId() }
-  if (body !== undefined) headers['Content-Type'] = 'application/json'
+  if (body !== undefined && !isFormData) headers['Content-Type'] = 'application/json'
   const token = getToken()
   if (token) headers.Authorization = `Bearer ${token}`
 
@@ -50,7 +55,7 @@ export async function request<T>(method: Method, path: string, body?: unknown, s
     res = await fetch(`${API_URL}/api/v1${path}`, {
       method,
       headers,
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: body === undefined ? undefined : isFormData ? (body as FormData) : JSON.stringify(body),
       signal,
     })
   } catch (err) {
@@ -60,15 +65,19 @@ export async function request<T>(method: Method, path: string, body?: unknown, s
 
   if (!res.ok) {
     if (res.status === 401 && token) unauthorizedHandler?.()
-    // API returns either { message } or RFC 7807 ProblemDetails { title, detail }
+    // API returns either { message } or RFC 7807 ProblemDetails { title, detail, code, missing }
     let message = res.statusText
+    let code: string | undefined
+    let missing: string[] | undefined
     try {
       const data = await res.json()
       message = data.message ?? data.detail ?? data.title ?? message
+      if (typeof data.code === 'string') code = data.code
+      if (Array.isArray(data.missing)) missing = data.missing
     } catch {
       // empty body
     }
-    throw new ApiError(res.status, message)
+    throw new ApiError(res.status, message, code, missing)
   }
 
   if (res.status === 204) return undefined as T

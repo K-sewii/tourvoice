@@ -139,3 +139,197 @@ export interface ListenHistoryItem {
   listenedSeconds: number
   playedAt: string
 }
+
+// ===== Admin DTOs =====
+
+export type PlaceStatus = 'Draft' | 'Published' | 'Hidden'
+export type TranslationStatus = 'Draft' | 'Reviewed'
+export type TranslationSource = 'Machine' | 'Manual'
+
+export interface Quota {
+  usedToday: number
+  dailyLimit: number
+  blockThreshold: number
+  percent: number
+  average7Days: number
+}
+
+export interface DayStat {
+  date: string
+  listens: number
+  sessions: number
+  qrScans: number
+  peakConcurrent: number
+}
+
+export interface DashboardData {
+  live: number
+  publishedPlaces: number
+  draftTranslations: number
+  today: DayStat
+  quota: Quota
+  days: DayStat[]
+}
+
+export interface AccessStats {
+  days: DayStat[]
+}
+
+export interface UsageLog {
+  createdAt: string
+  characters: number
+  chunks: number
+  success: boolean
+  errorCode: string | null
+}
+
+export interface UsageData {
+  quota: Quota
+  recent: UsageLog[]
+}
+
+export interface PresenceSnapshot {
+  live: number
+  byPlace: Record<string, number>
+  atUtc: string
+}
+
+export interface AdminTranslation {
+  languageCode: string
+  name: string
+  narrationText: string | null
+  status: TranslationStatus
+  source: TranslationSource
+  stale: boolean
+  machineMatch: number | null
+}
+
+export interface AdminPlaceNode {
+  id: number
+  slug: string
+  name: string
+  kind: PlaceKind
+  category: string | null
+  foodType: string | null
+  status: PlaceStatus
+  sortOrder: number
+  coverImageUrl: string | null
+  hasVietnameseNarration: boolean
+  reviewedLanguages: number
+  draftLanguages: number
+  children: AdminPlaceNode[]
+}
+
+export interface AdminPlaceDetail {
+  id: number
+  slug: string
+  kind: PlaceKind
+  category: string | null
+  foodType: string | null
+  parentId: number | null
+  latitude: number
+  longitude: number
+  coverImageUrl: string | null
+  status: PlaceStatus
+  sortOrder: number
+  address: string | null
+  priceRange: string | null
+  openingHours: string | null
+  slugLocked: boolean
+  parentName: string | null
+  translations: AdminTranslation[]
+  foods: AdminPlaceNode[] | null
+}
+
+export interface CreatePlaceRequest {
+  slug: string
+  kind: PlaceKind
+  category: string | null
+  foodType: string | null
+  parentId: number | null
+  latitude: number
+  longitude: number
+  sortOrder: number
+  address?: string | null
+  priceRange?: string | null
+  openingHours?: string | null
+  name?: string | null
+}
+
+export interface UpdatePlaceRequest {
+  category: string | null
+  foodType: string | null
+  latitude: number
+  longitude: number
+  coverImageUrl: string | null
+  sortOrder: number
+  address?: string | null
+  priceRange?: string | null
+  openingHours?: string | null
+  slug?: string | null
+}
+
+export interface PagedResult<T> {
+  items: T[]
+  total: number
+  page: number
+  pageSize: number
+}
+
+export interface LanguageTranslationResult {
+  languageCode: string
+  success: boolean
+  charactersUsed: number
+  errorMessage: string | null
+  skipped: boolean
+}
+
+export interface TranslatePlaceResult {
+  results: LanguageTranslationResult[]
+}
+
+export interface UpdateTranslationRequest {
+  name: string
+  narrationText: string | null
+}
+
+export interface MatrixCell {
+  status: 'None' | 'Draft' | 'Reviewed'
+  stale: boolean
+}
+
+export interface MatrixRow {
+  placeId: number
+  slug: string
+  name: string
+  kind: PlaceKind
+  status: PlaceStatus
+  parentName: string | null
+  cells: Record<string, MatrixCell>
+  canTranslate: boolean
+}
+
+export interface NarrationMatrix {
+  languages: Language[]
+  rows: MatrixRow[]
+}
+
+export interface UpdateLanguageRequest {
+  mtCode: string
+  speechLang: string
+  isEnabled: boolean
+}
+
+export interface AdminUser {
+  id: number
+  email: string
+  fullName: string
+  role: 'Customer' | 'Admin'
+  isActive: boolean
+}
+
+export interface CreateAdminRequest {
+  email: string
+  password: string
+  fullName: string
+}

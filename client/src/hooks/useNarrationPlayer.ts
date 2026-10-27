@@ -79,7 +79,7 @@ export function useNarrationPlayer(text: string | null | undefined, { speechLang
 
   const speakFrom = useCallback(
     (start: number, r: Rate = rate) => {
-      if (!supported || !voice || start < 0 || start >= sentences.length) return
+      if (!supported || start < 0 || start >= sentences.length) return
       const synth = window.speechSynthesis
       // Any utterance from an older generation (cancelled/replaced) ignores its callbacks.
       const gen = ++generation.current
@@ -87,8 +87,12 @@ export function useNarrationPlayer(text: string | null | undefined, { speechLang
 
       const speak = (i: number) => {
         const u = new SpeechSynthesisUtterance(sentences[i])
-        u.voice = voice
-        u.lang = voice.lang
+        if (voice) {
+          u.voice = voice
+          u.lang = voice.lang
+        } else {
+          u.lang = speechLang
+        }
         u.rate = r
         u.onstart = () => {
           if (gen !== generation.current) return
@@ -117,7 +121,7 @@ export function useNarrationPlayer(text: string | null | undefined, { speechLang
       setStatus('playing')
       speak(start)
     },
-    [rate, sentences, stopClock, supported, voice],
+    [rate, sentences, speechLang, stopClock, supported, voice],
   )
 
   const pause = useCallback(() => {
@@ -174,9 +178,9 @@ export function useNarrationPlayer(text: string | null | undefined, { speechLang
     index,
     rate,
     supported,
-    /** true once voices loaded and none matches the language → show text only. */
+    /** true once voices loaded and none matches the language → show fallback voice hint. */
     noVoice: supported && voicesReady && !voice,
-    canPlay: supported && !!voice && sentences.length > 0,
+    canPlay: supported && sentences.length > 0,
     play,
     start,
     pause,
