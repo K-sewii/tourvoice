@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using System.Diagnostics.CodeAnalysis;
 using TourVoice.BLL.Auth;
 using TourVoice.BLL.Services;
 using TourVoice.BLL.Translation;
@@ -7,6 +8,7 @@ using TourVoice.DAL;
 
 namespace TourVoice.BLL;
 
+[ExcludeFromCodeCoverage]
 public static class DependencyInjection
 {
     public static IServiceCollection AddBusinessLayer(
