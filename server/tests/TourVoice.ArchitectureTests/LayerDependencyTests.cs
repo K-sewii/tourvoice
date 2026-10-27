@@ -43,6 +43,19 @@ public class LayerDependencyTests
         Assert.True(result.IsSuccessful, Loi(result));
     }
 
+    [Fact]
+    public void Bll_KhongDuoc_PhuThuoc_HttpMvcHaySignalR()
+    {
+        // HTML ch.13: BLL khong tham chieu SignalR; presence day so qua IPresenceNotifier (cai dat o API).
+        // (Microsoft.AspNetCore.Identity duoc phep: PasswordHasher nam trong Microsoft.Extensions.Identity.Core.)
+        var result = Types.InAssembly(Bll)
+            .ShouldNot().HaveDependencyOnAny(
+                "Microsoft.AspNetCore.SignalR", "Microsoft.AspNetCore.Http", "Microsoft.AspNetCore.Mvc")
+            .GetResult();
+
+        Assert.True(result.IsSuccessful, Loi(result));
+    }
+
     private static string Loi(TestResult r) =>
         "Vi phạm kiến trúc 3 lớp tại: " +
         string.Join(", ", r.FailingTypeNames ?? Enumerable.Empty<string>());

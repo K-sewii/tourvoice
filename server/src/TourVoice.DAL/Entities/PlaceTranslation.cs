@@ -10,9 +10,8 @@ public class PlaceTranslation
     public string Name { get; set; } = null!;
     public string? NarrationText { get; set; }             // toi da 4000 ky tu (BR-04)
     public TranslationStatus Status { get; set; } = TranslationStatus.Draft;
-    public TranslationSource Source { get; set; } = TranslationSource.Human;
+    public TranslationSource Source { get; set; } = TranslationSource.Manual;
 
-    public string? AudioUrl { get; set; }
-    public int? AudioDurationSeconds { get; set; }
-    public string? AudioHash { get; set; }                  // hash(van ban + giong) - tai su dung (BR-05)
+    public string? SourceHash { get; set; }                // SHA-256 cua ban vi da duyet luc dich (BR-05)
+    public decimal? MachineMatch { get; set; }             // diem match MyMemory tra ve (0..1)
 }

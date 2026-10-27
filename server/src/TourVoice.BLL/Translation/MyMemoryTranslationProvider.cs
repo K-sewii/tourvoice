@@ -1,4 +1,5 @@
-using System.Net.Http.Json;
+using System.Net;
+using System.Text.Json;
 using System.Web;
 using Microsoft.Extensions.Configuration;
 
@@ -19,28 +20,54 @@ public class MyMemoryTranslationProvider : ITranslationProvider
     public async Task<TranslationChunkResult> TranslateAsync(
         string text, string sourceLang, string targetLang, CancellationToken ct = default)
     {
-        var query = HttpUtility.UrlEncode(text);
-        var url = $"get?q={query}&langpair={sourceLang}|{targetLang}&de={_email}";
+        var url = $"get?q={HttpUtility.UrlEncode(text)}&langpair={sourceLang}|{targetLang}&de={HttpUtility.UrlEncode(_email)}";
 
         try
         {
-            var response = await _httpClient.GetFromJsonAsync<MyMemoryResponse>(url, ct);
-            var translated = response?.ResponseData?.TranslatedText ?? string.Empty;
-            return new TranslationChunkResult(translated, text.Length, true, null);
+            using var response = await _httpClient.GetAsync(url, ct);
+            if (response.StatusCode == HttpStatusCode.TooManyRequests)
+                return Fail(text, TranslationChunkResult.QuotaExceededCode);
+            if (!response.IsSuccessStatusCode)
+                return Fail(text, $"http_{(int)response.StatusCode}");
+
+            using var doc = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync(ct), cancellationToken: ct);
+            return Parse(doc.RootElement, text);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is HttpRequestException or JsonException or TaskCanceledException or InvalidOperationException)
         {
-            return new TranslationChunkResult(string.Empty, text.Length, false, ex.GetType().Name);
+            return Fail(text, ex.GetType().Name);
         }
     }
 
-    private class MyMemoryResponse
+    /// <summary>MyMemory tra HTTP 200 kem responseStatus rieng (so hoac chuoi); khac 200 la loi, 429 la het han muc.</summary>
+    internal static TranslationChunkResult Parse(JsonElement root, string text)
     {
-        public MyMemoryResponseData? ResponseData { get; set; }
+        var status = ReadStatus(root);
+        if (status == 429) return Fail(text, TranslationChunkResult.QuotaExceededCode);
+        if (status != 200) return Fail(text, $"status_{status}");
+
+        if (!root.TryGetProperty("responseData", out var data)
+            || data.ValueKind != JsonValueKind.Object
+            || !data.TryGetProperty("translatedText", out var translated)
+            || translated.ValueKind != JsonValueKind.String
+            || string.IsNullOrWhiteSpace(translated.GetString()))
+            return Fail(text, "empty_translation");
+
+        decimal? match = data.TryGetProperty("match", out var m) && m.ValueKind == JsonValueKind.Number
+            ? Math.Round(m.GetDecimal(), 4) : null;
+        return new TranslationChunkResult(translated.GetString()!, text.Length, true, null, match);
     }
 
-    private class MyMemoryResponseData
+    private static int ReadStatus(JsonElement root)
     {
-        public string? TranslatedText { get; set; }
+        if (!root.TryGetProperty("responseStatus", out var s)) return 0;
+        return s.ValueKind switch
+        {
+            JsonValueKind.Number when s.TryGetInt32(out var n) => n,
+            JsonValueKind.String when int.TryParse(s.GetString(), out var n) => n,
+            _ => 0,
+        };
     }
+
+    private static TranslationChunkResult Fail(string text, string code) => new(string.Empty, text.Length, false, code);
 }

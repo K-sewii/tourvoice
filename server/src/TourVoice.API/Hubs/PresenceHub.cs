@@ -1,32 +1,30 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
-using TourVoice.API.Presence;
+using TourVoice.API.Infrastructure;
+using TourVoice.BLL.Presence;
 
 namespace TourVoice.API.Hubs;
 
-public class PresenceHub : Hub
+/// <summary>
+/// Hub chi cho dashboard admin (BR-17): ket noi la vao nhom admins va nhan ngay so lieu hien tai,
+/// sau do nhan "PresenceUpdated" moi khi so thiet bi doi. Khach khong ket noi hub (dung heartbeat HTTP).
+/// </summary>
+[Authorize(Roles = ClaimsPrincipalExtensions.AdminRole)]
+public class PresenceHub(IPresenceService presence) : Hub
 {
-    private const string DashboardGroup = "dashboard";
-    private readonly IPresenceTracker _tracker;
+    public const string AdminsGroup = "admins";
+    public const string UpdatedMethod = "PresenceUpdated";
 
-    public PresenceHub(IPresenceTracker tracker)
+    public override async Task OnConnectedAsync()
     {
-        _tracker = tracker;
+        await Groups.AddToGroupAsync(Context.ConnectionId, AdminsGroup);
+        await Clients.Caller.SendAsync(UpdatedMethod, presence.GetSnapshot());
+        await base.OnConnectedAsync();
     }
+}
 
-    public Task Heartbeat(string placeSlug)
-    {
-        _tracker.Heartbeat(Context.ConnectionId, placeSlug);
-        return Task.CompletedTask;
-    }
-
-    public Task SubscribeDashboard()
-    {
-        return Groups.AddToGroupAsync(Context.ConnectionId, DashboardGroup);
-    }
-
-    public override Task OnDisconnectedAsync(Exception? exception)
-    {
-        _tracker.Remove(Context.ConnectionId);
-        return base.OnDisconnectedAsync(exception);
-    }
+public class SignalRPresenceNotifier(IHubContext<PresenceHub> hub) : IPresenceNotifier
+{
+    public Task NotifyAsync(PresenceSnapshotDto snapshot, CancellationToken ct = default) =>
+        hub.Clients.Group(PresenceHub.AdminsGroup).SendAsync(PresenceHub.UpdatedMethod, snapshot, ct);
 }

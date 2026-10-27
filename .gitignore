@@ -483,3 +483,4 @@ $RECYCLE.BIN/
 .DS_Store
 
 coverage-report/
+.claude/

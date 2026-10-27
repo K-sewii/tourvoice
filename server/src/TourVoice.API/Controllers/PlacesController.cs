@@ -1,46 +1,38 @@
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
+using TourVoice.API.Infrastructure;
 using TourVoice.BLL.Dtos;
 using TourVoice.BLL.Services;
 
 namespace TourVoice.API.Controllers;
 
+/// <summary>Noi dung cong khai (PRD API: nhom Cong khai). Khong can dang nhap.</summary>
 [ApiController]
-[Route("api/v1/places")]
+[Route("api/v1")]
 public class PlacesController : ControllerBase
 {
     private readonly IPlaceService _service;
-    private readonly IListenService _listenService;
+    public PlacesController(IPlaceService service) => _service = service;
 
-    public PlacesController(IPlaceService service, IListenService listenService)
-    {
-        _service = service;
-        _listenService = listenService;
-    }
+    [HttpGet("places")]
+    public Task<List<PlaceSummaryDto>> GetDestinations([FromQuery] string lang = "vi") =>
+        _service.GetPublishedDestinationsAsync(lang);
 
-    [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] string lang = "vi") =>
-        Ok(await _service.GetPublishedDestinationsAsync(lang));
+    /// <summary>Chi tiet (SD-01). Kem JWT Customer thi co isFavorite/isVisited.</summary>
+    [HttpGet("places/{slug}")]
+    public Task<PlaceDetailDto> GetBySlug(string slug, [FromQuery] string lang = "vi") =>
+        _service.GetPlaceDetailAsync(slug, lang, User.CustomerId());
 
-    [HttpGet("foods")]
-    public async Task<IActionResult> GetAllFoods([FromQuery] string lang = "vi") =>
-        Ok(await _service.GetPublishedFoodsAsync(lang));
+    [HttpGet("places/{slug}/foods")]
+    public Task<List<FoodPlaceSummaryDto>> GetFoods(string slug, [FromQuery] string lang = "vi") =>
+        _service.GetFoodsOfDestinationAsync(slug, lang);
 
-    [HttpGet("{slug}")]
-    public async Task<IActionResult> GetBySlug(string slug, [FromQuery] string lang = "vi")
-    {
-        var place = await _service.GetPlaceDetailAsync(slug, lang);
-        return place is null ? NotFound() : Ok(place);
-    }
+    /// <summary>Kham pha (SCR-07): category = Heritage|Market|FoodStreet|Park|food; q tim khong dau.</summary>
+    [HttpGet("explore")]
+    public Task<List<ExploreItemDto>> Explore([FromQuery] string lang = "vi",
+        [FromQuery] string? category = null, [FromQuery] string? q = null) =>
+        _service.ExploreAsync(lang, category, q);
 
-    [HttpPost("{slug}/listen")]
-    public async Task<IActionResult> RecordListen(string slug, [FromBody] RecordListenRequestDto request)
-    {
-        int? userId = null;
-        var idClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (idClaim is not null && int.TryParse(idClaim, out var parsedId)) userId = parsedId;
-
-        var ok = await _listenService.RecordListenAsync(slug, request, userId);
-        return ok ? NoContent() : NotFound();
-    }
+    [HttpGet("map/markers")]
+    public Task<List<MapMarkerDto>> GetMapMarkers([FromQuery] string lang = "vi") =>
+        _service.GetMapMarkersAsync(lang);
 }

@@ -3,7 +3,7 @@ namespace TourVoice.DAL.Entities;
 public class UsageLog
 {
     public long Id { get; set; }
-    public UsageService Service { get; set; } = UsageService.Translator;
+    public UsageService Service { get; set; } = UsageService.MyMemory;
     public int Characters { get; set; }
     public int Chunks { get; set; }
     public bool Success { get; set; }
