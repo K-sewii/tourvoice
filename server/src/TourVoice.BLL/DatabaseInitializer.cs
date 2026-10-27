@@ -1,11 +1,13 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using System.Diagnostics.CodeAnalysis;
 using TourVoice.DAL.Data;
 using TourVoice.DAL.Entities;
 
 namespace TourVoice.BLL;
 
+[ExcludeFromCodeCoverage]
 public static class DatabaseInitializer
 {
     public static async Task InitializeDatabaseAsync(this IServiceProvider services)
