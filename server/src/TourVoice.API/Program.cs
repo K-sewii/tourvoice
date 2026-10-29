@@ -37,7 +37,15 @@ builder.Services.AddHostedService<PresenceSweeper>();
 const string CorsPolicy = "Web";
 var corsOrigins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? ["http://localhost:5173"];
 builder.Services.AddCors(options => options.AddPolicy(CorsPolicy, policy =>
-    policy.WithOrigins(corsOrigins).AllowAnyHeader().AllowAnyMethod().AllowCredentials()));
+    policy
+        .SetIsOriginAllowed(origin =>
+            corsOrigins.Contains(origin) ||
+            (Uri.TryCreate(origin, UriKind.Absolute, out var uri)
+                && uri.Scheme == Uri.UriSchemeHttps
+                && uri.Host.EndsWith(".trycloudflare.com", StringComparison.OrdinalIgnoreCase)))
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials()));
 
 var jwtKey = builder.Configuration["Jwt:Key"];
 if (string.IsNullOrEmpty(jwtKey) || Encoding.UTF8.GetByteCount(jwtKey) < 32)
