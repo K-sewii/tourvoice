@@ -16,6 +16,7 @@ public static class DbSeeder
     private record FoodSeed(string Slug, string Parent, string FoodType, decimal Lat, decimal Lng,
         string Price, string Hours, int Order, string Name, string Narration);
 
+    private const string FoodCover = "/seed/mon-an.svg";
     private static readonly DestinationSeed[] Destinations =
     [
         new("dinh-binh-tien", "Heritage", 10.750m, 106.642m, "122 Minh Phụng, phường Bình Tây, TP.HCM", "07:00 - 17:00", 1,
@@ -82,7 +83,12 @@ public static class DbSeeder
             await db.SaveChangesAsync();
         }
 
-        if (await db.Places.AnyAsync()) return;
+        if (await db.Places.AnyAsync())
+        {
+            // DB da seed tu truoc: chi bu anh bia con thieu (du lieu cu tao truoc khi co anh).
+            await BackfillSeedCoversAsync(db);
+            return;
+        }
 
         var parents = new Dictionary<string, Place>();
         foreach (var d in Destinations)
@@ -91,6 +97,7 @@ public static class DbSeeder
             {
                 Slug = d.Slug, Kind = PlaceKind.Destination, Category = d.Category,
                 Latitude = d.Lat, Longitude = d.Lng, Address = d.Address, OpeningHours = d.Hours,
+                CoverImageUrl = $"/seed/{d.Slug}.svg",
                 Status = PlaceStatus.Published, SortOrder = d.Order,
                 Translations = { Vi(d.Name, d.Narration) },
             };
@@ -105,12 +112,40 @@ public static class DbSeeder
             {
                 Slug = f.Slug, Kind = PlaceKind.Food, FoodType = f.FoodType, Parent = parent,
                 Latitude = f.Lat, Longitude = f.Lng, Address = parent.Address, PriceRange = f.Price, OpeningHours = f.Hours,
+                CoverImageUrl = FoodCover,
                 Status = PlaceStatus.Published, SortOrder = f.Order,
                 Translations = { Vi(f.Name, f.Narration) },
             });
         }
 
         await db.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Ban seed cu (tao truoc khi co anh bia) van phai Publish lai duoc: BR-08 bat buoc CoverImageUrl.
+    /// Chi dien cho dong dang trong, khong ghi de anh admin da tai len.
+    /// </summary>
+    private static async Task BackfillSeedCoversAsync(TourVoiceDbContext db)
+    {
+        var destinationCovers = Destinations.ToDictionary(d => d.Slug, d => $"/seed/{d.Slug}.svg");
+        var foodSlugs = Foods.Select(f => f.Slug).ToHashSet(StringComparer.Ordinal);
+
+        var missing = await db.Places
+            .Where(p => p.CoverImageUrl == null || p.CoverImageUrl == "")
+            .ToListAsync();
+
+        var changed = false;
+        foreach (var place in missing)
+        {
+            var cover = destinationCovers.TryGetValue(place.Slug, out var own)
+                ? own
+                : foodSlugs.Contains(place.Slug) ? FoodCover : null;
+            if (cover is null) continue;
+            place.CoverImageUrl = cover;
+            changed = true;
+        }
+
+        if (changed) await db.SaveChangesAsync();
     }
 
     private static PlaceTranslation Vi(string name, string narration) => new()

@@ -84,3 +84,9 @@ export const LocateIcon = (p: P) => (
     <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
   </svg>
 )
+export const SearchIcon = (p: P) => (
+  <svg {...base(p)}>
+    <circle cx="11" cy="11" r="8" />
+    <path d="m21 21-4.35-4.35" />
+  </svg>
+)

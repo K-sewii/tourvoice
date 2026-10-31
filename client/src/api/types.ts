@@ -71,6 +71,8 @@ export interface ExploreItem {
   openingHours: string | null
   parentSlug: string | null
   parentName: string | null
+  /** Geofence trigger radius in metres (default 100 on the server). */
+  geofenceRadiusM?: number
 }
 
 export interface MapMarker {
@@ -152,6 +154,7 @@ export interface Quota {
   blockThreshold: number
   percent: number
   average7Days: number
+  averageDays: number
 }
 
 export interface DayStat {
@@ -162,6 +165,11 @@ export interface DayStat {
   peakConcurrent: number
 }
 
+export interface PresenceSettings {
+  refreshSeconds: number
+  ttlSeconds: number
+}
+
 export interface DashboardData {
   live: number
   publishedPlaces: number
@@ -169,6 +177,7 @@ export interface DashboardData {
   today: DayStat
   quota: Quota
   days: DayStat[]
+  presence: PresenceSettings
 }
 
 export interface AccessStats {
@@ -186,6 +195,7 @@ export interface UsageLog {
 export interface UsageData {
   quota: Quota
   recent: UsageLog[]
+  recentLimit: number
 }
 
 export interface PresenceSnapshot {
@@ -237,8 +247,10 @@ export interface AdminPlaceDetail {
   openingHours: string | null
   slugLocked: boolean
   parentName: string | null
+  parentSlug: string | null
   translations: AdminTranslation[]
   foods: AdminPlaceNode[] | null
+  geofenceRadiusM?: number
 }
 
 export interface CreatePlaceRequest {
@@ -267,6 +279,7 @@ export interface UpdatePlaceRequest {
   priceRange?: string | null
   openingHours?: string | null
   slug?: string | null
+  geofenceRadiusM?: number
 }
 
 export interface PagedResult<T> {
@@ -333,3 +346,12 @@ export interface CreateAdminRequest {
   password: string
   fullName: string
 }
+
+/** Map radius settings (km) */
+export const MapRadiusDefaultKm = 0.1
+export const MapRadiusMaxKm = 0.5
+export const MapRadiusMinKm = 0.05
+
+
+/** Default center for the map (District 6, HCMC) */
+export const MapDefaultCenter: [number, number] = [10.748, 106.64]

@@ -75,7 +75,7 @@ public class PlaceService : IPlaceService
                 x.Place.Id, x.Place.Slug, x.Name, x.Place.Kind.ToString(), x.Place.Category, x.Place.FoodType,
                 x.Place.CoverImageUrl, x.Place.Latitude, x.Place.Longitude,
                 x.Place.Address, x.Place.PriceRange, x.Place.OpeningHours,
-                x.Place.Parent?.Slug, x.ParentName))
+                x.Place.Parent?.Slug, x.ParentName, x.Place.GeofenceRadiusM))
             .ToList();
     }
 

@@ -92,6 +92,11 @@ const en: Messages = {
     empty: 'No food spots yet.',
   },
   map: {
+    within: 'Within',
+    show_radius: 'Show radius',
+    nearby_places: 'Nearby places',
+    search_results: '{{count}} results',
+    draw_poi: 'Draw a place',
     title: 'Map',
     locate: 'My location',
     close: 'Close',

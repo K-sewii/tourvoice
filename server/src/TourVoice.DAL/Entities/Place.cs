@@ -11,6 +11,7 @@ public class Place
     public Place? Parent { get; set; }
     public decimal Latitude { get; set; }
     public decimal Longitude { get; set; }
+    public int GeofenceRadiusM { get; set; } = 100;       // ban kinh kich hoat geofence (met)
     public string? CoverImageUrl { get; set; }
     public PlaceStatus Status { get; set; } = PlaceStatus.Draft;
     public int SortOrder { get; set; }

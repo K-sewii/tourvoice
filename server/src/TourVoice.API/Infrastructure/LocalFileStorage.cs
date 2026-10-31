@@ -22,11 +22,18 @@ public sealed class LocalFileStorage(IConfiguration configuration, IWebHostEnvir
         var dir = Path.Combine(Root, folder);
         Directory.CreateDirectory(dir);
 
-        var fileName = $"{Guid.NewGuid():N}{extension}";
-        await using (var file = File.Create(Path.Combine(dir, fileName)))
+        // Chong ../ hoac path traversal - kiem tra duong dan duoc gioi han trong thu muc Root
+        var safeFileName = $"{Guid.NewGuid():N}{extension}";
+        var fullPath = Path.Combine(dir, safeFileName);
+        var normalizedPath = Path.GetFullPath(fullPath);
+
+        if (!normalizedPath.StartsWith(Root + Path.DirectorySeparatorChar, StringComparison.Ordinal))
+            throw new InvalidOperationException("File path vuot qua gioi han thu muc upload.");
+
+        await using (var file = File.Create(normalizedPath))
             await content.CopyToAsync(file, ct);
 
-        return $"{BaseUrl()}{RequestPath}/{folder}/{fileName}";
+        return $"{BaseUrl()}{RequestPath}/{folder}/{safeFileName}";
     }
 
     public Task DeleteAsync(string url)
@@ -44,11 +51,12 @@ public sealed class LocalFileStorage(IConfiguration configuration, IWebHostEnvir
     }
 
     private string BaseUrl()
-    {
-        var configured = configuration["Uploads:PublicBaseUrl"];
-        if (!string.IsNullOrWhiteSpace(configured)) return configured.TrimEnd('/');
-        var request = http.HttpContext?.Request
-            ?? throw new InvalidOperationException("Can HttpContext hoac Uploads:PublicBaseUrl de tao URL anh.");
-        return $"{request.Scheme}://{request.Host}";
-    }
+        {
+            var configured = configuration["Uploads:PublicBaseUrl"];
+            if (!string.IsNullOrWhiteSpace(configured)) return configured.TrimEnd('/');
+            var request = http.HttpContext?.Request;
+            if (request != null) return $"{request.Scheme}://{request.Host}";
+            // Fallback khi chay trong test/unit: tra ve duong dan relative
+            return "/uploads";
+        }
 }

@@ -5,7 +5,7 @@ namespace TourVoice.API.Infrastructure;
 /// <summary>Moi 5 giay loai thiet bi im lang qua TTL 45 giay (mat mang, het pin): toi da 45 + 5 giay.</summary>
 public sealed class PresenceSweeper(IServiceScopeFactory scopes, ILogger<PresenceSweeper> logger) : BackgroundService
 {
-    public static readonly TimeSpan Interval = TimeSpan.FromSeconds(5);
+    public static readonly TimeSpan Interval = PresenceService.SweepInterval;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {

@@ -1,8 +1,8 @@
-import { Fragment, useState, type FormEvent } from 'react'
+import { Fragment, useState, type FormEvent, useEffect } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { createAdminPlace, getAdminPlacesTree } from '../../api/admin'
+import { createAdminPlace, getAdminLanguages, getAdminPlacesTree } from '../../api/admin'
 import { ApiError } from '../../api/http'
-import type { PlaceKind } from '../../api/types'
+import type { Language, PlaceKind } from '../../api/types'
 import { CloseIcon } from '../../components/Icons'
 import { QrCodePanel } from '../../components/QrCodeModal'
 import { ErrorState, Loading } from '../../components/States'
@@ -55,6 +55,21 @@ export default function AdminPlacesPage() {
   )
   const nodes = tree.data?.items ?? []
   const total = tree.data?.total ?? 0
+  // Fetch language count from backend (once on mount)
+  const [languages, setLanguages] = useState<Language[]>([])
+  const languageCount = languages.length
+
+  useEffect(() => {
+    const fetchLanguages = async () => {
+      try {
+        const result = await getAdminLanguages()
+        setLanguages(result)
+      } catch (err) {
+        console.error("Failed to fetch languages:", err)
+      }
+    }
+    fetchLanguages()
+  }, [])
 
   const [qrTarget, setQrTarget] = useState<{ slug: string; name: string } | null>(null)
 
@@ -180,7 +195,7 @@ export default function AdminPlacesPage() {
                 <th>ĐỊA ĐIỂM</th>
                 <th>PHÂN LOẠI</th>
                 <th>TRẠNG THÁI</th>
-                <th>THUYẾT MINH (5 NGÔN NGỮ)</th>
+                <th>THUYẾT MINH ({languageCount} NGÔN NGỮ)</th>
                 <th>THAO TÁC</th>
               </tr>
             </thead>
@@ -215,7 +230,7 @@ export default function AdminPlacesPage() {
                       </td>
                       <td>
                         <span className="admin-lang-progress">
-                          <strong>{dest.reviewedLanguages}/5</strong> đã duyệt
+                          <strong>{dest.reviewedLanguages}/{languageCount}</strong> đã duyệt
                           {dest.draftLanguages > 0 && (
                             <span className="admin-draft-hint"> · {dest.draftLanguages} nháp</span>
                           )}
@@ -273,7 +288,7 @@ export default function AdminPlacesPage() {
                         </td>
                         <td>
                           <span className="admin-lang-progress">
-                            <strong>{food.reviewedLanguages}/5</strong> đã duyệt
+                            <strong>{food.reviewedLanguages}/{languageCount}</strong> đã duyệt
                             {food.draftLanguages > 0 && (
                               <span className="admin-draft-hint"> · {food.draftLanguages} nháp</span>
                             )}

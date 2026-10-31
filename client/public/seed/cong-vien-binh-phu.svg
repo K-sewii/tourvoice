@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-label="Công viên Bình Phú">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0.9" y2="1">
+      <stop offset="0" stop-color="#1d4520"/>
+      <stop offset="1" stop-color="#5c9a52"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="800" fill="url(#bg)"/>
+  <g fill="none" stroke="#d9efb9" stroke-opacity="0.2" stroke-width="2">
+    <circle cx="1020" cy="120" r="180"/>
+    <circle cx="1020" cy="120" r="260"/>
+    <circle cx="1020" cy="120" r="340"/>
+  </g>
+  <rect x="80" y="596" width="64" height="4" rx="2" fill="#d9efb9"/>
+  <text x="80" y="654" fill="#d9efb9" font-family="Segoe UI, Roboto, sans-serif" font-size="24" letter-spacing="6">TOURVOICE · QUẬN 6</text>
+  <text x="80" y="722" fill="#ffffff" font-family="Segoe UI, Roboto, sans-serif" font-size="58" font-weight="700">Công viên Bình Phú</text>
+</svg>

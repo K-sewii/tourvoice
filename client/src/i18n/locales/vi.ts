@@ -90,6 +90,11 @@ const vi = {
     empty: 'Chưa có món/quán nào.',
   },
   map: {
+    within: 'Trong bán kính',
+    show_radius: 'Hiển thị bán kính',
+    nearby_places: 'Còn các điểm gần',
+    search_results: '{{count}} kết quả',
+    draw_poi: 'Vẽ địa điểm',
     title: 'Bản đồ',
     locate: 'Vị trí của tôi',
     close: 'Đóng',

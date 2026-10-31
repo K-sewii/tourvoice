@@ -6,8 +6,11 @@ namespace TourVoice.DAL.Data;
 public class TourVoiceDbContext : DbContext
 {
     // Vung phuc vu (BR-03) - chan them bang CHECK o CSDL.
-    public const decimal MinLatitude = 10.730m, MaxLatitude = 10.765m;
-    public const decimal MinLongitude = 106.615m, MaxLongitude = 106.665m;
+// Gia tri mac dinh chinh-hop pham vi dien tu Quận 6, TP.HCM. Khi deploy tien hanh,
+    // cai dat cac gia tri phu hop theo dien tu muc tieu cua ung dung thông qua
+    // cau hoi AppSettings: LatitudeMin, LatitudeMax, LongitudeMin, LongitudeMax.
+    public static readonly decimal[] DefaultLatitudeRange = { 10.730m, 10.765m };
+    public static readonly decimal[] DefaultLongitudeRange = { 106.615m, 106.665m };
     public const int NarrationMaxLength = 4000;
 
     public TourVoiceDbContext(DbContextOptions<TourVoiceDbContext> options) : base(options) { }
@@ -48,6 +51,7 @@ public class TourVoiceDbContext : DbContext
             e.Property(p => p.OpeningHours).HasMaxLength(100);
             e.Property(p => p.Latitude).HasColumnType("decimal(9,6)");
             e.Property(p => p.Longitude).HasColumnType("decimal(9,6)");
+            e.Property(p => p.GeofenceRadiusM).HasDefaultValue(100);
             e.HasOne(p => p.Parent).WithMany(p => p.Children)
                 .HasForeignKey(p => p.ParentId).OnDelete(DeleteBehavior.Restrict);
 
@@ -61,7 +65,7 @@ public class TourVoiceDbContext : DbContext
                 t.HasCheckConstraint("CK_Places_Kind_Parent",
                     "(`Kind` = 'Destination' AND `ParentId` IS NULL) OR (`Kind` = 'Food' AND `ParentId` IS NOT NULL)");
                 t.HasCheckConstraint("CK_Places_ServiceArea",
-                    $"`Latitude` BETWEEN {MinLatitude} AND {MaxLatitude} AND `Longitude` BETWEEN {MinLongitude} AND {MaxLongitude}");
+                    $"`Latitude` BETWEEN {DefaultLatitudeRange[0]} AND {DefaultLatitudeRange[1]} AND `Longitude` BETWEEN {DefaultLongitudeRange[0]} AND {DefaultLongitudeRange[1]}");
             });
         });
 

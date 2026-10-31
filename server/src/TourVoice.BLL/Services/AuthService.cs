@@ -15,7 +15,7 @@ namespace TourVoice.BLL.Services;
 
 public class AuthService : IAuthService
 {
-    public const int MinPasswordLength = 8;   // BR-12
+    public const int MinPasswordLength = 10;   // BR-12: tang tu 8 ky tu toi 10 ky tu de bao mat tot hon
     public const int MaxFullNameLength = 100;
 
     private readonly ICustomerRepository _repository;
@@ -51,13 +51,15 @@ public class AuthService : IAuthService
 
     public async Task<AuthResponseDto> LoginAsync(LoginRequestDto request)
     {
-        // Sai email hay sai mat khau deu cung mot loi 401 de khong lo email (BR-12).
-        var user = await _repository.GetUserByEmailAsync(NormalizeEmail(request.Email));
-        if (user is null || _hasher.VerifyHashedPassword(user, user.PasswordHash, request.Password ?? "")
-                == PasswordVerificationResult.Failed)
+        var email = NormalizeEmail(request.Email);
+        var user = await _repository.GetUserByEmailAsync(email);
+        if (user is null)
             throw new UnauthorizedException("invalid_credentials", "Email hoặc mật khẩu không đúng.");
 
-        // Kiem tra khoa sau khi dung mat khau: chi chu tai khoan moi biet tai khoan bi khoa.
+        var pwVerified = _hasher.VerifyHashedPassword(user, user.PasswordHash, request.Password ?? "") == PasswordVerificationResult.Success;
+        if (!pwVerified)
+            throw new UnauthorizedException("invalid_credentials", "Email hoặc mật khẩu không đúng.");
+
         if (!user.IsActive)
             throw new ForbiddenException("account_locked", "Tài khoản đã bị khóa.");
 

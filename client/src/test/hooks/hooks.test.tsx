@@ -2,8 +2,8 @@ import { act, render, renderHook, screen, waitFor } from '@testing-library/react
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
-import { useAsync } from './useAsync'
-import { useSwitchLang } from './useSwitchLang'
+import { useAsync } from '../../hooks/useAsync'
+import { useSwitchLang } from '../../hooks/useSwitchLang'
 
 function deferred<T>() {
   let resolve!: (v: T) => void

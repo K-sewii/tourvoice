@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { publishAdminPlace, translatePlace } from './admin'
-import { ApiError } from './http'
+import { publishAdminPlace, translatePlace } from '../../api/admin'
+import { ApiError } from '../../api/http'
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })

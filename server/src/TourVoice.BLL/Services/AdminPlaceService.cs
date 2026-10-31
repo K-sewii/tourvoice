@@ -52,6 +52,7 @@ public partial class AdminPlaceService : IAdminPlaceService
         if (!Enum.TryParse<PlaceKind>(request.Kind, ignoreCase: true, out var kind))
             throw new ValidationException("invalid_kind", "Loại địa điểm phải là Destination hoặc Food.");
         ValidateCoordinates(request.Latitude, request.Longitude);
+        ValidateGeofenceRadius(request.GeofenceRadiusM);
 
         int? parentId = null;
         if (kind == PlaceKind.Food)
@@ -77,6 +78,7 @@ public partial class AdminPlaceService : IAdminPlaceService
             ParentId = parentId,
             Latitude = request.Latitude,
             Longitude = request.Longitude,
+            GeofenceRadiusM = request.GeofenceRadiusM,
             SortOrder = request.SortOrder,
             Address = Clean(request.Address),
             PriceRange = Clean(request.PriceRange),
@@ -100,6 +102,7 @@ public partial class AdminPlaceService : IAdminPlaceService
         if (place is null) return null;
 
         ValidateCoordinates(request.Latitude, request.Longitude);
+        if (request.GeofenceRadiusM is { } radius) ValidateGeofenceRadius(radius);
         ValidateClassification(place.Kind, request.Category, request.FoodType);
 
         var slug = request.Slug?.Trim();
@@ -115,6 +118,7 @@ public partial class AdminPlaceService : IAdminPlaceService
         place.FoodType = place.Kind == PlaceKind.Food ? Clean(request.FoodType) : null;
         place.Latitude = request.Latitude;
         place.Longitude = request.Longitude;
+        if (request.GeofenceRadiusM is { } newRadius) place.GeofenceRadiusM = newRadius;
         place.CoverImageUrl = Clean(request.CoverImageUrl);
         place.SortOrder = request.SortOrder;
         place.Address = Clean(request.Address);
@@ -224,12 +228,18 @@ public partial class AdminPlaceService : IAdminPlaceService
 
     // BR-03
     private static bool InServiceArea(decimal lat, decimal lng) =>
-        lat is >= TourVoiceDbContext.MinLatitude and <= TourVoiceDbContext.MaxLatitude
-        && lng is >= TourVoiceDbContext.MinLongitude and <= TourVoiceDbContext.MaxLongitude;
+        lat >= TourVoiceDbContext.DefaultLatitudeRange[0] && lat <= TourVoiceDbContext.DefaultLatitudeRange[1]
+        && lng >= TourVoiceDbContext.DefaultLongitudeRange[0] && lng <= TourVoiceDbContext.DefaultLongitudeRange[1];
 
     private static void ValidateCoordinates(decimal lat, decimal lng)
     {
         if (!InServiceArea(lat, lng)) throw new OutsideServiceAreaException();
+    }
+
+    private static void ValidateGeofenceRadius(int meters)
+    {
+        if (meters < 20 || meters > 2000)
+            throw new ValidationException("invalid_geofence_radius", "Bán kính geofence phải từ 20 đến 2000 mét.");
     }
 
     private static void ValidateClassification(PlaceKind kind, string? category, string? foodType)
@@ -262,8 +272,10 @@ public partial class AdminPlaceService : IAdminPlaceService
             p.Address, p.PriceRange, p.OpeningHours,
             SlugLocked: p.Status != PlaceStatus.Draft,
             ParentName: p.Parent?.Translations.FirstOrDefault(t => t.LanguageCode == TranslationRules.SourceLanguage)?.Name,
+            ParentSlug: p.Parent?.Slug,
             Translations: p.Translations.OrderBy(t => t.LanguageCode).Select(t => ToTranslationDto(t, vi)).ToList(),
-            Foods: includeRelations ? p.Children.OrderBy(c => c.SortOrder).ThenBy(c => c.Id).Select(ToNode).ToList() : null);
+            Foods: includeRelations ? p.Children.OrderBy(c => c.SortOrder).ThenBy(c => c.Id).Select(ToNode).ToList() : null,
+            GeofenceRadiusM: p.GeofenceRadiusM);
     }
 
     internal static AdminTranslationDto ToTranslationDto(PlaceTranslation t, PlaceTranslation? vi) => new(

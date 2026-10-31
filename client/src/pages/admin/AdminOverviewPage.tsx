@@ -72,6 +72,11 @@ export default function AdminOverviewPage() {
   const liveEntries = Object.entries(snapshot.byPlace).sort((a, b) => b[1] - a[1])
   const liveMax = Math.max(1, snapshot.live, ...liveEntries.map(([, v]) => v))
   const avgPercent = Math.round((dashboard.quota.average7Days / dashboard.quota.dailyLimit) * 1000) / 10
+  // BR-06: ngưỡng chặn lấy từ backend (QuotaDto), không hardcode 90% / 45.000.
+  const blockPercent =
+    dashboard.quota.dailyLimit > 0
+      ? Math.round((dashboard.quota.blockThreshold / dashboard.quota.dailyLimit) * 1000) / 10
+      : 0
   const webSessions = Math.max(0, totalSessions - totalQrScans)
 
   return (
@@ -80,7 +85,7 @@ export default function AdminOverviewPage() {
         <div>
           <h1>Tổng quan</h1>
           <p className="admin-muted">
-            Trực tuyến cập nhật trong 5 giây · {dashboard.publishedPlaces} địa điểm đã xuất bản
+            Trực tuyến cập nhật trong {dashboard.presence.refreshSeconds} giây · {dashboard.publishedPlaces} địa điểm đã xuất bản
           </p>
         </div>
         <div>
@@ -229,7 +234,7 @@ export default function AdminOverviewPage() {
                 className={`admin-progress-fill ${dashboard.quota.usedToday >= dashboard.quota.blockThreshold ? 'danger' : ''}`}
                 style={{ width: `${Math.min(100, dashboard.quota.percent)}%` }}
               />
-              <div className="admin-quota-threshold" style={{ left: '90%' }} title="Ngưỡng chặn 90% (45.000 ký tự)" />
+              <div className="admin-quota-threshold" style={{ left: `${blockPercent}%` }} title={`Ngưỡng chặn ${blockPercent}% (${dashboard.quota.blockThreshold.toLocaleString()} ký tự)`} />
             </div>
           </div>
 
@@ -245,12 +250,12 @@ export default function AdminOverviewPage() {
                 className="admin-progress-fill"
                 style={{ width: `${Math.min(100, avgPercent)}%` }}
               />
-              <div className="admin-quota-threshold" style={{ left: '90%' }} title="Ngưỡng chặn 90% (45.000 ký tự)" />
+              <div className="admin-quota-threshold" style={{ left: `${blockPercent}%` }} title={`Ngưỡng chặn ${blockPercent}% (${dashboard.quota.blockThreshold.toLocaleString()} ký tự)`} />
             </div>
           </div>
 
           <p className="admin-muted" style={{ marginTop: 12, fontSize: '0.84rem' }}>
-            Tự động dừng gọi khi chạm 90% hạn mức ngày = {dashboard.quota.blockThreshold.toLocaleString()} ký tự (BR-06)
+            Tự động dừng gọi khi chạm {blockPercent}% hạn mức ngày = {dashboard.quota.blockThreshold.toLocaleString()} ký tự (BR-06)
           </p>
         </section>
       </div>

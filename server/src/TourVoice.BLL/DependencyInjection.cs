@@ -23,6 +23,7 @@ public static class DependencyInjection
         services.AddScoped<IPlaceService, PlaceService>();
         services.AddScoped<ILanguageService, LanguageService>();
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IAccountStatusService, AccountStatusService>();
         services.AddScoped<ICustomerService, CustomerService>();
         services.AddScoped<IAdminPlaceService, AdminPlaceService>();
         services.AddScoped<INarrationPipelineService, NarrationPipelineService>();
@@ -35,6 +36,8 @@ public static class DependencyInjection
         services.AddHttpClient<ITranslationProvider, MyMemoryTranslationProvider>(client =>
         {
             client.BaseAddress = new Uri("https://api.mymemory.translated.net/");
+            // Provider treo khong duoc giu request admin vo han (moi lan thu toi da 10 giay).
+            client.Timeout = TimeSpan.FromSeconds(10);
         });
 
         return services;

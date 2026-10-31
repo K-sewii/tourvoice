@@ -18,6 +18,7 @@ import {
   uploadPlaceCover,
 } from '../../api/admin'
 import { ApiError } from '../../api/http'
+import { placePath } from '../../api/places'
 import type { AdminPlaceDetail, AdminTranslation, Language, Quota } from '../../api/types'
 import { CloseIcon, PauseIcon, PlayIcon } from '../../components/Icons'
 import { QrCodePanel } from '../../components/QrCodeModal'
@@ -153,10 +154,11 @@ function PlaceEditorInner({
 
   // Editable form fields
   const [slug, setSlug] = useState(initialPlace.slug)
-  const [category, setCategory] = useState(initialPlace.category ?? 'Heritage')
+  const [category, setCategory] = useState(initialPlace.category ?? '')
   const [foodType, setFoodType] = useState(initialPlace.foodType ?? 'Noodles')
   const [latitude, setLatitude] = useState(String(initialPlace.latitude))
   const [longitude, setLongitude] = useState(String(initialPlace.longitude))
+  const [geofenceRadius, setGeofenceRadius] = useState(String(initialPlace.geofenceRadiusM ?? 100))
   const [address, setAddress] = useState(initialPlace.address ?? '')
   const [priceRange, setPriceRange] = useState(initialPlace.priceRange ?? '')
   const [openingHours, setOpeningHours] = useState(initialPlace.openingHours ?? '')
@@ -205,10 +207,11 @@ function PlaceEditorInner({
 
   const syncForm = (p: AdminPlaceDetail) => {
     setSlug(p.slug)
-    setCategory(p.category ?? 'Heritage')
+    setCategory(p.category ?? '')
     setFoodType(p.foodType ?? 'Noodles')
     setLatitude(String(p.latitude))
     setLongitude(String(p.longitude))
+    setGeofenceRadius(String(p.geofenceRadiusM ?? 100))
     setAddress(p.address ?? '')
     setPriceRange(p.priceRange ?? '')
     setOpeningHours(p.openingHours ?? '')
@@ -232,6 +235,11 @@ function PlaceEditorInner({
 
   const handleSave = async (e?: FormEvent) => {
     e?.preventDefault()
+    // BR-08: diem den phai co danh muc; khong tu chon 'Heritage' thay admin.
+    if (place.kind === 'Destination' && !category) {
+      setFeedback({ type: 'danger', text: 'Vui lòng chọn danh mục cho điểm đến trước khi lưu.' })
+      return
+    }
     setSaving(true)
     setFeedback(null)
     try {
@@ -241,6 +249,7 @@ function PlaceEditorInner({
         foodType: place.kind === 'Food' ? foodType || null : null,
         latitude: Number(latitude),
         longitude: Number(longitude),
+        geofenceRadiusM: Number(geofenceRadius) || 100,
         coverImageUrl: coverImageUrl.trim() || null,
         sortOrder: Number(sortOrder) || 0,
         address: address.trim() || null,
@@ -449,15 +458,17 @@ function PlaceEditorInner({
     }
   }
 
-  const orderedLangs = ['vi', 'en', 'zh', 'ko', 'ja']
+  // Danh sach ngon ngu lay tu bang Language cua backend (vi luon dung dau), khong hardcode 5 ma.
+  const orderedLangs = useMemo(() => {
+    const codes = languages.map((l) => l.code)
+    if (codes.length === 0) return Object.keys(translationsByLang)
+    return codes.includes('vi') ? ['vi', ...codes.filter((c) => c !== 'vi')] : codes
+  }, [languages, translationsByLang])
   const reviewedCount = orderedLangs.filter(
     (code) => translationsByLang[code]?.status === 'Reviewed' && translationsByLang[code]?.narrationText?.trim(),
   ).length
   const canTranslateMissing = viTranslation?.status === 'Reviewed' && Boolean(viTranslation.narrationText?.trim())
-  const guestPreviewPath =
-    place.kind === 'Food' && place.parentId
-      ? `/vi/explore`
-      : `/vi/places/${encodeURIComponent(place.slug)}`
+  const guestPreviewPath = `/vi${placePath({ slug: place.slug, parentSlug: place.parentSlug })}`
 
   return (
     <div className="admin-page">
@@ -577,7 +588,9 @@ function PlaceEditorInner({
                   className="admin-select"
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
+                  required
                 >
+                  <option value="">— Chọn danh mục —</option>
                   {CATEGORIES.map((c) => (
                     <option key={c.value} value={c.value}>
                       {c.label}
@@ -737,6 +750,18 @@ function PlaceEditorInner({
                   step="0.000001"
                   value={longitude}
                   onChange={(e) => setLongitude(e.target.value)}
+                />
+              </div>
+              <div className="field">
+                <label htmlFor="loc-geofence">Bán kính geofence (m)</label>
+                <input
+                  id="loc-geofence"
+                  type="number"
+                  min={20}
+                  max={2000}
+                  step={10}
+                  value={geofenceRadius}
+                  onChange={(e) => setGeofenceRadius(e.target.value)}
                 />
               </div>
             </div>
@@ -903,7 +928,7 @@ function PlaceEditorInner({
           <div className="admin-narration-footer-bar">
             <div>
               <strong>
-                Đã duyệt {reviewedCount} / 5 ngôn ngữ
+                Đã duyệt {reviewedCount} / {orderedLangs.length} ngôn ngữ
                 {quota
                   ? ` · MyMemory hôm nay ${Math.round(quota.usedToday / 100) / 10}k / ${Math.round(quota.dailyLimit / 1000)}k`
                   : ''}
@@ -967,7 +992,7 @@ function PlaceEditorInner({
                             {STATUS_LABELS[f.status] ?? f.status}
                           </span>
                         </td>
-                        <td>{f.reviewedLanguages}/5 đã duyệt</td>
+                        <td>{f.reviewedLanguages}/{orderedLangs.length} đã duyệt</td>
                         <td>
                           <Link to={`/admin/places/${f.id}`} className="btn btn-soft btn-xs">
                             Sửa

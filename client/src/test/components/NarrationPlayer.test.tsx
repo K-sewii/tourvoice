@@ -3,9 +3,9 @@ import userEvent from '@testing-library/user-event'
 import { createRef } from 'react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import i18n from '../i18n'
-import { installSpeechMock } from '../test/speechMock'
-import { NarrationPlayer, type NarrationPlayerHandle } from './NarrationPlayer'
+import i18n from '../../i18n'
+import { installSpeechMock } from '../speechMock'
+import { NarrationPlayer, type NarrationPlayerHandle } from '../../components/NarrationPlayer'
 
 const TEXT = 'Câu một. Câu hai. Câu ba.'
 

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { setToken } from './http'
-import { recordListen } from './listen'
+import { setToken } from '../../api/http'
+import { recordListen } from '../../api/listen'
 
 describe('recordListen', () => {
   const fetchMock = vi.fn<typeof fetch>()

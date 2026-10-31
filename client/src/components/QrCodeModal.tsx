@@ -1,5 +1,6 @@
 import QRCode from 'qrcode'
 import { useEffect, useState } from 'react'
+import { escapeHtml } from '../lib/html'
 import { CloseIcon } from './Icons'
 
 interface Props {
@@ -88,7 +89,7 @@ export function QrCodePanel({ slug, name, onClose, inline = false }: Props) {
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>QR A6 - ${name}</title>
+  <title>QR A6 - ${escapeHtml(name)}</title>
   <style>
     @page { size: A6 portrait; margin: 10mm; }
     body {
@@ -112,12 +113,12 @@ export function QrCodePanel({ slug, name, onClose, inline = false }: Props) {
 </head>
 <body>
   <div class="brand">TourVoice · Quận 6</div>
-  <h1>${name}</h1>
+  <h1>${escapeHtml(name)}</h1>
   <div class="qr-box">${svgMarkup}</div>
   <div class="prompts">
-    ${SCAN_PROMPTS.map((p) => `<div>${p.text}</div>`).join('')}
+    ${SCAN_PROMPTS.map((p) => `<div>${escapeHtml(p.text)}</div>`).join('')}
   </div>
-  <div class="url">${targetUrl}</div>
+  <div class="url">${escapeHtml(targetUrl)}</div>
   <script>window.onload = () => { window.print(); }</script>
 </body>
 </html>`)

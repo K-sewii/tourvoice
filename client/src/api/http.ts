@@ -42,6 +42,9 @@ export class ApiError extends Error {
 
 type Method = 'GET' | 'POST' | 'PUT' | 'DELETE'
 
+/** A request that hangs must not keep a spinner forever (and the server has 10 s per MyMemory call). */
+export const REQUEST_TIMEOUT_MS = 15_000
+
 export async function request<T>(method: Method, path: string, body?: unknown, signal?: AbortSignal): Promise<T> {
   // X-Device-Id: presence key and per-device rate limit (PRD §8: 120 req/min per device).
   const isFormData = typeof FormData !== 'undefined' && body instanceof FormData
@@ -50,17 +53,29 @@ export async function request<T>(method: Method, path: string, body?: unknown, s
   const token = getToken()
   if (token) headers.Authorization = `Bearer ${token}`
 
+  // Own controller so a timeout and the caller's abort (useAsync) share one signal.
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+  const abortFromCaller = () => controller.abort()
+  if (signal?.aborted) controller.abort()
+  else signal?.addEventListener('abort', abortFromCaller, { once: true })
+
   let res: Response
   try {
     res = await fetch(`${API_URL}/api/v1${path}`, {
       method,
       headers,
       body: body === undefined ? undefined : isFormData ? (body as FormData) : JSON.stringify(body),
-      signal,
+      signal: controller.signal,
     })
   } catch (err) {
-    if (err instanceof DOMException && err.name === 'AbortError') throw err
+    // Caller cancelled (page changed/unmounted): let useAsync ignore it instead of showing an error.
+    if (signal?.aborted) throw err
+    if (err instanceof DOMException && err.name === 'AbortError') throw new ApiError(0, 'timeout')
     throw new ApiError(0, 'network')
+  } finally {
+    clearTimeout(timeout)
+    signal?.removeEventListener('abort', abortFromCaller)
   }
 
   if (!res.ok) {
@@ -82,5 +97,10 @@ export async function request<T>(method: Method, path: string, body?: unknown, s
 
   if (res.status === 204) return undefined as T
   const text = await res.text()
-  return (text ? JSON.parse(text) : undefined) as T
+  if (!text) return undefined as T
+  try {
+    return JSON.parse(text) as T
+  } catch {
+    throw new ApiError(res.status, 'invalid_response')
+  }
 }

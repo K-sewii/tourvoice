@@ -15,14 +15,7 @@ import { useAsync } from '../hooks/useAsync'
 import { useDistanceFormatter } from '../hooks/useGeolocation'
 import { useLang, useLocalePath } from '../hooks/useLang'
 import { directionsUrl } from '../lib/geo'
-import {
-  categoryLabel,
-  foodTypeLabel,
-  joinMeta,
-  localizeAddress,
-  localizePrice,
-  localizeTitle,
-} from '../lib/labels'
+import { categoryLabel, foodTypeLabel, joinMeta, localizePrice } from '../lib/labels'
 import { LANG_INFO, isLang } from '../lib/languages'
 
 /**
@@ -81,9 +74,9 @@ function PlaceView({ place, autoplay }: { place: PlaceDetail; autoplay: boolean 
   const contentLang = isLang(place.languageCode) ? place.languageCode : 'vi'
   const chip = isFood ? foodTypeLabel(t, place.foodType) : categoryLabel(t, place.category)
   const away = distance(place.latitude, place.longitude)
-  const displayTitle = localizeTitle(place.name, lang)
-  const displayParentName = localizeTitle(place.parentName ?? place.parentSlug, lang)
-  const displayAddress = localizeAddress(place.address, lang)
+  const displayTitle = place.name
+  const displayParentName = place.parentName ?? place.parentSlug ?? ''
+  const displayAddress = place.address
   const displayPrice = localizePrice(place.priceRange, lang)
 
   const onListened = useCallback(
@@ -190,7 +183,7 @@ function PlaceView({ place, autoplay }: { place: PlaceDetail; autoplay: boolean 
                       <PlaceCard
                         key={f.id}
                         to={to(`/places/${place.slug}/foods/${f.slug}`)}
-                        title={localizeTitle(f.name, lang)}
+                        title={f.name}
                         chip={foodTypeLabel(t, f.foodType)}
                         meta={joinMeta(localizePrice(f.priceRange, lang), f.openingHours)}
                         coverImageUrl={f.coverImageUrl}

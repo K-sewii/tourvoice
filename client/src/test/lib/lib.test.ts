@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { directionsUrl, distanceMeters, formatDistance } from './geo'
-import { matches } from './labels'
-import { detectLang } from './languages'
-import { splitSentences } from './sentences'
-import { pickVoice } from './speech'
+import { directionsUrl, distanceMeters, formatDistance } from '../../lib/geo'
+import { localizePrice, matches } from '../../lib/labels'
+import { detectLang } from '../../lib/languages'
+import { splitSentences } from '../../lib/sentences'
+import { pickVoice } from '../../lib/speech'
 
 const voice = (lang: string, localService = true) => ({ lang, localService, name: lang }) as SpeechSynthesisVoice
 
@@ -54,10 +54,8 @@ describe('geo', () => {
     expect(formatDistance(2600, 'vi')).toBe('2,6 km')
     expect(formatDistance(2600, 'en')).toBe('2.6 km')
   })
-  it('builds a walking Google Maps URL', () => {
-    expect(directionsUrl(10.7, 106.6)).toBe(
-      'https://www.google.com/maps/dir/?api=1&destination=10.7,106.6&travelmode=walking',
-    )
+  it('builds a walking OpenStreetMap directions URL', () => {
+    expect(directionsUrl(10.7, 106.6)).toBe('https://www.openstreetmap.org/#map=18/10.7/106.6')
   })
 })
 
@@ -66,5 +64,19 @@ describe('matches', () => {
     expect(matches('Chợ Bình Tây', 'cho binh tay')).toBe(true)
     expect(matches('Đình Bình Tiên', 'dinh')).toBe(true)
     expect(matches('Công viên Bình Phú', 'phu lam')).toBe(false)
+  })
+})
+
+describe('localizePrice', () => {
+  it('keeps Vietnamese prices as stored', () => {
+    expect(localizePrice('40.000đ - 70.000đ', 'vi')).toBe('40.000đ - 70.000đ')
+  })
+
+  it('formats numbers and currency for other languages without touching the words', () => {
+    expect(localizePrice('40.000đ - 70.000đ', 'en')).toBe('40,000 VND - 70,000 VND')
+  })
+
+  it('returns null for an empty price', () => {
+    expect(localizePrice(null, 'en')).toBeNull()
   })
 })

@@ -31,7 +31,7 @@ public record ExploreItemDto(
     int Id, string Slug, string Name, string Kind, string? Category, string? FoodType,
     string? CoverImageUrl, decimal Latitude, decimal Longitude,
     string? Address, string? PriceRange, string? OpeningHours,
-    string? ParentSlug, string? ParentName);
+    string? ParentSlug, string? ParentName, int GeofenceRadiusM = 100);
 
 /// <summary>Ghim tren ban do (SCR-04).</summary>
 public record MapMarkerDto(

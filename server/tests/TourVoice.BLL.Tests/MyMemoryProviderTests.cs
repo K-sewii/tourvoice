@@ -75,12 +75,17 @@ public class MyMemoryProviderTests
         }
     }
 
+    private static MyMemoryTranslationProvider MakeProvider(HttpMessageHandler handler)
+    {
+        var http = new HttpClient(handler) { BaseAddress = new Uri("https://api.mymemory.translated.net/") };
+        var config = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["MyMemory:Email"] = "team@x.vn" }).Build();
+        return new MyMemoryTranslationProvider(http, config);
+    }
+
     private static (MyMemoryTranslationProvider Provider, StubHandler Handler) Make(Func<HttpRequestMessage, HttpResponseMessage> respond)
     {
         var handler = new StubHandler(respond);
-        var http = new HttpClient(handler) { BaseAddress = new Uri("https://api.mymemory.translated.net/") };
-        var config = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["MyMemory:Email"] = "team@x.vn" }).Build();
-        return (new MyMemoryTranslationProvider(http, config), handler);
+        return (MakeProvider(handler), handler);
     }
 
     [Fact]
@@ -117,5 +122,58 @@ public class MyMemoryProviderTests
 
         Assert.False((await offline.TranslateAsync("x", "vi", "en")).Success);
         Assert.False((await garbage.TranslateAsync("x", "vi", "en")).Success);
+    }
+
+    [Fact]
+    public async Task Translate_RetriesOnce_WhenServerFailsTransiently()
+    {
+        var calls = 0;
+        var (provider, _) = Make(_ => ++calls == 1
+            ? new HttpResponseMessage(HttpStatusCode.BadGateway)
+            : new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("""{"responseData":{"translatedText":"Hello."},"responseStatus":200}"""),
+            });
+
+        var r = await provider.TranslateAsync("Xin chào.", "vi", "en");
+
+        Assert.True(r.Success);
+        Assert.Equal("Hello.", r.TranslatedText);
+        Assert.Equal(2, calls);
+    }
+
+    [Fact]
+    public async Task Translate_DoesNotRetry_WhenQuotaIsExhausted()
+    {
+        var calls = 0;
+        var (provider, _) = Make(_ =>
+        {
+            calls++;
+            return new HttpResponseMessage(HttpStatusCode.TooManyRequests);
+        });
+
+        var r = await provider.TranslateAsync("x", "vi", "en");
+
+        Assert.Equal(TranslationChunkResult.QuotaExceededCode, r.ErrorCode);
+        Assert.Equal(1, calls);
+    }
+
+    [Fact]
+    public async Task Translate_CallerCancellation_PropagatesInsteadOfBecomingAFailure()
+    {
+        var provider = MakeProvider(new HangingHandler());
+        using var cts = new CancellationTokenSource(50);
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => provider.TranslateAsync("x", "vi", "en", cts.Token));
+    }
+
+    private sealed class HangingHandler : HttpMessageHandler
+    {
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        {
+            await Task.Delay(TimeSpan.FromSeconds(30), ct);
+            return new HttpResponseMessage(HttpStatusCode.OK);
+        }
     }
 }

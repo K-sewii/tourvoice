@@ -17,21 +17,25 @@ public partial class NarrationPipelineService : INarrationPipelineService
     private readonly ILanguageRepository _languageRepository;
     private readonly IUsageLogRepository _usageLogRepository;
     private readonly ITranslationProvider _translationProvider;
+    private readonly TimeProvider _clock;
 
     public NarrationPipelineService(
         IPlaceRepository placeRepository,
         ILanguageRepository languageRepository,
         IUsageLogRepository usageLogRepository,
-        ITranslationProvider translationProvider)
+        ITranslationProvider translationProvider,
+        TimeProvider clock)
     {
         _placeRepository = placeRepository;
         _languageRepository = languageRepository;
         _usageLogRepository = usageLogRepository;
         _translationProvider = translationProvider;
+        _clock = clock;
     }
 
-    public async Task<TranslatePlaceResultDto> TranslatePlaceAsync(int placeId)
+    public async Task<TranslatePlaceResultDto> TranslatePlaceAsync(int placeId, CancellationToken ct = default)
     {
+        ct.ThrowIfCancellationRequested();
         var place = await _placeRepository.GetByIdAsync(placeId)
             ?? throw new PlaceNotFoundException();
 
@@ -55,8 +59,9 @@ public partial class NarrationPipelineService : INarrationPipelineService
         }
         if (pending.Count == 0) return new TranslatePlaceResultDto(results);
 
-        // BR-06: cong phan sap gui vao so da dung trong ngay.
-        var usedToday = await _usageLogRepository.GetTodayCharacterTotalAsync(UsageService.MyMemory);
+        // BR-06: cong phan sap gui vao so da dung trong ngay (moc 00:00 gio Viet Nam).
+        var usedToday = await _usageLogRepository.GetCharacterTotalSinceAsync(
+            UsageService.MyMemory, QuotaPolicy.DayStartUtc(_clock));
         if (usedToday + sourceText.Length * pending.Count > QuotaPolicy.BlockThreshold)
             throw new QuotaExceededException();
 
@@ -65,6 +70,7 @@ public partial class NarrationPipelineService : INarrationPipelineService
 
         foreach (var language in pending)
         {
+            ct.ThrowIfCancellationRequested();
             var parts = new List<string>();
             var matches = new List<decimal>();
             var characters = 0;
@@ -73,7 +79,8 @@ public partial class NarrationPipelineService : INarrationPipelineService
 
             foreach (var chunk in chunks)
             {
-                var result = await _translationProvider.TranslateAsync(chunk, SourceLanguage, language.MtCode);
+                var result = await _translationProvider.TranslateAsync(
+                    chunk, SourceLanguage, language.MtCode, ct);
                 characters += result.CharactersUsed;
                 sentChunks++;
                 if (!result.Success)
@@ -92,7 +99,7 @@ public partial class NarrationPipelineService : INarrationPipelineService
                 Chunks = sentChunks,
                 Success = errorCode is null,
                 ErrorCode = errorCode,
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = _clock.GetUtcNow().UtcDateTime,
             });
 
             if (errorCode is not null)
