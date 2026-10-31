@@ -92,6 +92,11 @@ const ko: Messages = {
     empty: '아직 먹거리가 없습니다.',
   },
   map: {
+    within: '범위 내',
+    show_radius: '반경 표시',
+    nearby_places: '근처 장소',
+    search_results: '{{count}}개 결과',
+    draw_poi: '장소 그리기',
     title: '지도',
     locate: '내 위치',
     close: '닫기',

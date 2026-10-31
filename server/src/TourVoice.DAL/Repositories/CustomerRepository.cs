@@ -12,13 +12,13 @@ public class CustomerRepository : ICustomerRepository
     public CustomerRepository(TourVoiceDbContext db) => _db = db;
 
     public Task<User?> GetUserByEmailAsync(string email) =>
-        _db.Users.FirstOrDefaultAsync(u => u.Email == email);
+        _db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Email == email);
 
     public Task<User?> GetUserByIdAsync(int id) =>
         _db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id);
 
     public Task<bool> EmailExistsAsync(string email) =>
-        _db.Users.AnyAsync(u => u.Email == email);
+        _db.Users.AsNoTracking().AnyAsync(u => u.Email == email);
 
     public async Task AddUserAsync(User user)
     {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { safeReturn } from './safeReturn'
+import { safeReturn } from '../../lib/safeReturn'
 
 const ORIGIN = 'http://localhost:5173'
 

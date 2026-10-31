@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { clearCatalogCache, getCatalog, placePath } from './places'
+import { clearCatalogCache, getCatalog, placePath } from '../../api/places'
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })

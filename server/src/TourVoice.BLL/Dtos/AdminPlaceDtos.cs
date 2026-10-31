@@ -16,21 +16,22 @@ public record AdminPlaceDetailDto(
     int? ParentId, decimal Latitude, decimal Longitude,
     string? CoverImageUrl, string Status, int SortOrder,
     string? Address = null, string? PriceRange = null, string? OpeningHours = null,
-    bool SlugLocked = false, string? ParentName = null,
-    List<AdminTranslationDto>? Translations = null, List<AdminPlaceNodeDto>? Foods = null);
+    bool SlugLocked = false, string? ParentName = null, string? ParentSlug = null,
+    List<AdminTranslationDto>? Translations = null, List<AdminPlaceNodeDto>? Foods = null,
+    int GeofenceRadiusM = 100);
 
 /// <param name="Name">Ten tieng Viet; bo trong thi tam dung slug.</param>
 public record CreatePlaceRequestDto(
     string Slug, string Kind, string? Category, string? FoodType,
     int? ParentId, decimal Latitude, decimal Longitude, int SortOrder,
     string? Address = null, string? PriceRange = null, string? OpeningHours = null,
-    string? Name = null);
+    string? Name = null, int GeofenceRadiusM = 100);
 
 /// <param name="Slug">Chi doi duoc khi Place con Draft (khoa sau lan Publish dau, BR-08).</param>
 public record UpdatePlaceRequestDto(
     string? Category, string? FoodType, decimal Latitude, decimal Longitude,
     string? CoverImageUrl, int SortOrder,
     string? Address = null, string? PriceRange = null, string? OpeningHours = null,
-    string? Slug = null);
+    string? Slug = null, int? GeofenceRadiusM = null);
 
 public record PagedResultDto<T>(List<T> Items, int Total, int Page, int PageSize);

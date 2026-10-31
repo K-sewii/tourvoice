@@ -16,7 +16,8 @@ public class AdminTranslationsController : ControllerBase
 
     /// <summary>"Dich phan thieu". Loi nghiep vu (404/422/429/502) do DomainExceptionHandler anh xa.</summary>
     [HttpPost("places/{placeId:int}/translate")]
-    public async Task<IActionResult> Translate(int placeId) => Ok(await _service.TranslatePlaceAsync(placeId));
+    public async Task<IActionResult> Translate(int placeId, CancellationToken ct) =>
+        Ok(await _service.TranslatePlaceAsync(placeId, ct));
 
     [HttpPut("places/{placeId:int}/translations/{lang}")]
     public async Task<IActionResult> Update(int placeId, string lang, UpdateTranslationRequestDto request)

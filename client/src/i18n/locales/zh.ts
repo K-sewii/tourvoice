@@ -92,6 +92,11 @@ const zh: Messages = {
     empty: '暂无美食。',
   },
   map: {
+    within: '范围内',
+    show_radius: '显示范围',
+    nearby_places: '附近地点',
+    search_results: '{{count}} 个结果',
+    draw_poi: '绘制地点',
     title: '地图',
     locate: '我的位置',
     close: '关闭',

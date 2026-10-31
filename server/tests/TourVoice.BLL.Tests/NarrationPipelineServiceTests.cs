@@ -23,7 +23,7 @@ public class NarrationPipelineServiceTests
     {
         _service = new NarrationPipelineService(
             _placeRepository.Object, _languageRepository.Object,
-            _usageLogRepository.Object, _translationProvider.Object);
+            _usageLogRepository.Object, _translationProvider.Object, TimeProvider.System);
         _languageRepository.Setup(r => r.GetEnabledAsync()).ReturnsAsync(Langs("vi", "en"));
         _languageRepository.Setup(r => r.GetAllAsync()).ReturnsAsync(Langs("vi", "en"));
     }
@@ -83,7 +83,7 @@ public class NarrationPipelineServiceTests
     public async Task Translate_Throws429_WhenEstimateCrossesNinetyPercent_BR06()
     {
         Setup(PlaceWithVi(new string('a', 1000)));
-        _usageLogRepository.Setup(r => r.GetTodayCharacterTotalAsync(UsageService.MyMemory)).ReturnsAsync(44_500);
+        _usageLogRepository.Setup(r => r.GetCharacterTotalSinceAsync(UsageService.MyMemory, It.IsAny<DateTime>())).ReturnsAsync(44_500);
 
         await Assert.ThrowsAsync<QuotaExceededException>(() => _service.TranslatePlaceAsync(1));
         _translationProvider.VerifyNoOtherCalls();
@@ -93,7 +93,7 @@ public class NarrationPipelineServiceTests
     public async Task Translate_AllowsExactlyTheThreshold()
     {
         Setup(PlaceWithVi(new string('a', 1000)));
-        _usageLogRepository.Setup(r => r.GetTodayCharacterTotalAsync(UsageService.MyMemory)).ReturnsAsync(44_000);
+        _usageLogRepository.Setup(r => r.GetCharacterTotalSinceAsync(UsageService.MyMemory, It.IsAny<DateTime>())).ReturnsAsync(44_000);
         ProviderReturns("en", "ok");
 
         var result = await _service.TranslatePlaceAsync(1);   // 44.000 + 1.000 = 45.000, khong vuot

@@ -39,7 +39,7 @@ public class AuthServiceTests
         repo.Setup(r => r.EmailExistsAsync("new@test.com")).ReturnsAsync(false);
 
         var service = new AuthService(repo.Object, MakeJwtSettings());
-        var result = await service.RegisterAsync(new RegisterRequestDto("  New@Test.COM ", "Pass@123", " Nguoi Dung "));
+        var result = await service.RegisterAsync(new RegisterRequestDto("  New@Test.COM ", "Pass@123456", " Nguoi Dung "));
 
         Assert.False(string.IsNullOrWhiteSpace(result.Token));
         Assert.Equal("new@test.com", result.Email);
@@ -57,14 +57,14 @@ public class AuthServiceTests
         var service = new AuthService(repo.Object, MakeJwtSettings());
 
         var ex = await Assert.ThrowsAsync<EmailAlreadyExistsException>(() =>
-            service.RegisterAsync(new RegisterRequestDto("TRUNG@test.com", "Pass@123", "A")));
+            service.RegisterAsync(new RegisterRequestDto("TRUNG@test.com", "Pass@123456", "A")));
         Assert.Equal("email_taken", ex.Code);
     }
 
     [Theory]
-    [InlineData("khong-phai-email", "Pass@123", "A", "invalid_email")]
-    [InlineData("a@test.com", "1234567", "A", "weak_password")]   // BR-12: >= 8 ky tu
-    [InlineData("a@test.com", "Pass@123", "   ", "invalid_full_name")]
+    [InlineData("khong-phai-email", "Pass@123456", "A", "invalid_email")]
+    [InlineData("a@test.com", "1234567", "A", "weak_password")]   // BR-12: >= 10 ky tu
+    [InlineData("a@test.com", "Pass@123456", "   ", "invalid_full_name")]
     public async Task RegisterAsync_DuLieuKhongHopLe_NemValidation(string email, string password, string name, string code)
     {
         var repo = new Mock<ICustomerRepository>();

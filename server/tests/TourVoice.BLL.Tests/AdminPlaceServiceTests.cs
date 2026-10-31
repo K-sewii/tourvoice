@@ -197,6 +197,22 @@ public class AdminPlaceServiceTests
     }
 
     [Fact]
+    public async Task UpdateAsync_SavesGeofenceRadius_AndKeepsItWhenOmitted()
+    {
+        var place = ReadyDestination();
+        _repoMock.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(place);
+
+        var dto = await _service.UpdateAsync(1, Update() with { GeofenceRadiusM = 250 });
+        Assert.Equal(250, place.GeofenceRadiusM);
+        Assert.Equal(250, dto!.GeofenceRadiusM);
+
+        await _service.UpdateAsync(1, Update());   // khong gui -> giu nguyen
+        Assert.Equal(250, place.GeofenceRadiusM);
+
+        await Assert.ThrowsAsync<ValidationException>(() => _service.UpdateAsync(1, Update() with { GeofenceRadiusM = 5 }));
+    }
+
+    [Fact]
     public async Task UpdateAsync_ChangesSlug_OnlyWhileDraft()
     {
         var draft = ReadyDestination();

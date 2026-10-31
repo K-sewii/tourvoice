@@ -96,7 +96,7 @@ export default function AdminLanguagesPage() {
         <div>
           <h1>Ngôn ngữ</h1>
           <p className="admin-muted">
-            Cấu hình 5 ngôn ngữ: mã dịch máy MyMemory (<code>MtCode</code>), mã giọng đọc BCP-47 (<code>SpeechLang</code>) và nghe thử trên thiết bị
+            Cấu hình {items.length} ngôn ngữ: mã dịch máy MyMemory (<code>MtCode</code>), mã giọng đọc BCP-47 (<code>SpeechLang</code>) và nghe thử trên thiết bị
           </p>
         </div>
       </div>

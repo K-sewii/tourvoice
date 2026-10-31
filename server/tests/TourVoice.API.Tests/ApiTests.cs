@@ -7,7 +7,11 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.IdentityModel.Tokens;
+using TourVoice.BLL.Auth;
 
 namespace TourVoice.API.Tests;
 
@@ -24,6 +28,9 @@ public class ApiTests : IClassFixture<ApiTests.Factory>
 
     public sealed class Factory : WebApplicationFactory<Program>
     {
+        /// <summary>Dat true de gia lap tai khoan trong token da bi khoa.</summary>
+        public bool Locked { get; init; }
+
         public string UploadsDir { get; } = Path.Combine(Path.GetTempPath(), "tourvoice-api-tests", Guid.NewGuid().ToString("N"));
 
         protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -34,6 +41,17 @@ public class ApiTests : IClassFixture<ApiTests.Factory>
             builder.UseSetting("Jwt:Key", JwtKey);
             builder.UseSetting("Jwt:Issuer", "TourVoiceTest");
             builder.UseSetting("Jwt:Audience", "TourVoiceTestClient");
+            // Khong co MySQL trong test: thay bang stub de AccountStatusMiddleware khong cham CSDL.
+            builder.ConfigureTestServices(services =>
+            {
+                services.RemoveAll<IAccountStatusService>();
+                services.AddSingleton<IAccountStatusService>(new StubAccountStatus(!Locked));
+            });
+        }
+
+        private sealed class StubAccountStatus(bool active) : IAccountStatusService
+        {
+            public Task<bool> IsActiveAsync(int userId, CancellationToken ct = default) => Task.FromResult(active);
         }
     }
 
@@ -74,6 +92,19 @@ public class ApiTests : IClassFixture<ApiTests.Factory>
         var content = new StringContent("""{"deviceId":"00000000-0000-4000-8000-000000000001"}""", Encoding.UTF8, "text/plain");
         var res = await Client().PostAsync("/api/v1/presence/leave", content);
         Assert.Equal(HttpStatusCode.NoContent, res.StatusCode);
+    }
+
+    [Fact]
+    public async Task TokenConHan_NhungTaiKhoanDaBiKhoa_Tra403()
+    {
+        await using var factory = new Factory { Locked = true };
+        var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Token("Admin"));
+
+        var res = await client.GetAsync("/api/v1/admin/presence");
+
+        Assert.Equal(HttpStatusCode.Forbidden, res.StatusCode);
+        Assert.Equal("account_locked", (await Problem(res)).GetProperty("code").GetString());
     }
 
     [Fact]

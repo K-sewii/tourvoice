@@ -27,6 +27,8 @@ public interface IPresenceService
     /// <summary>Loai thiet bi im lang qua TTL, dong phien (PresenceSweeper goi moi 5 giay).</summary>
     Task SweepAsync(CancellationToken ct = default);
     PresenceSnapshotDto GetSnapshot();
+    /// <summary>Dem so thiet bi dang online (last seen trong TTL) de hien thi tren dashboard/ma</summary>
+    Task<int> GetLiveDeviceCountAsync(DateTimeOffset referenceTimeUtc);
 }
 
 /// <summary>
@@ -38,6 +40,8 @@ public partial class PresenceService : IPresenceService
 {
     public static readonly TimeSpan Ttl = TimeSpan.FromSeconds(45);              // BR-15
     public static readonly TimeSpan NewSessionAfter = TimeSpan.FromMinutes(30);  // BR-16
+    /// <summary>PresenceSweeper quet lai moi 15 giay; dashboard admin hien thi chu ky nay tu backend.</summary>
+    public static readonly TimeSpan SweepInterval = TimeSpan.FromSeconds(15);
 
     private readonly IPresenceStore _store;
     private readonly IAccessSessionRepository _sessions;
@@ -129,6 +133,14 @@ public partial class PresenceService : IPresenceService
             StartedAt = now,
             LastSeenAt = now,
         });
+    }
+
+    /// <summary>Dem so thiet bi dang online (last seen trong TTL) de hien thi tren dashboard/ma</summary>
+    public async Task<int> GetLiveDeviceCountAsync(DateTimeOffset referenceTimeUtc)
+    {
+        var cutoff = referenceTimeUtc - Ttl;
+        var all = _store.All().Where(e => e.LastSeenUtc >= cutoff);
+        return all.Count();
     }
 
     private Task EndSessionAsync(PresenceEntry entry, DateTime endedUtc) =>

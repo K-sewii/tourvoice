@@ -155,6 +155,11 @@ namespace TourVoice.DAL.Migrations
                         .HasMaxLength(30)
                         .HasColumnType("varchar(30)");
 
+                    b.Property<int>("GeofenceRadiusM")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(100);
+
                     b.Property<string>("Kind")
                         .IsRequired()
                         .HasMaxLength(20)

@@ -1,5 +1,6 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using TourVoice.API.Hubs;
@@ -33,6 +34,17 @@ Directory.CreateDirectory(uploadsRoot);
 builder.Services.AddSignalR();
 builder.Services.AddSingleton<IPresenceNotifier, SignalRPresenceNotifier>();
 builder.Services.AddHostedService<PresenceSweeper>();
+
+// Chay sau Cloudflare Tunnel / nginx / docker: X-Forwarded-For cho biet IP khach that, neu khong
+// rate limit theo IP se sup ve mot partition (IP cua proxy). Chi tin loopback (mac dinh) va
+// dai IP noi bo cua Docker; request tu Internet khong di qua proxy se bi bo qua header.
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.ForwardLimit = 1;
+    foreach (var cidr in new[] { "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16" })
+        options.KnownIPNetworks.Add(System.Net.IPNetwork.Parse(cidr));
+});
 
 const string CorsPolicy = "Web";
 var corsOrigins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? ["http://localhost:5173"];
@@ -80,6 +92,8 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
+// Phai dat truoc moi middleware doc scheme/IP (CORS, rate limiter, redirect).
+app.UseForwardedHeaders();
 app.UseExceptionHandler();
 app.UseStatusCodePages();
 
@@ -88,6 +102,11 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
     // PRD: Swagger o /swagger de frontend va nguoi kiem thu dung chung dac ta.
     app.UseSwaggerUI(o => o.SwaggerEndpoint("/openapi/v1.json", "TourVoice API v1"));
+    await app.Services.InitializeDatabaseAsync();
+}
+else if (app.Configuration.GetValue<bool>("Database:InitializeOnStartup"))
+{
+    // Deploy (cd.yml): migrate + seed lan dau ma khong mo Swagger. Tat sau khi dung de khong chay lai seed.
     await app.Services.InitializeDatabaseAsync();
 }
 
@@ -99,6 +118,8 @@ app.UseStaticFiles(new StaticFileOptions
 
 app.UseCors(CorsPolicy);
 app.UseAuthentication();
+// BR-12: token con han nhung tai khoan da bi khoa thi van phai bi chan.
+app.UseMiddleware<AccountStatusMiddleware>();
 app.UseAuthorization();
 app.UseRateLimiter();
 

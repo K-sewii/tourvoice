@@ -4,13 +4,19 @@ using TourVoice.DAL.Entities;
 
 namespace TourVoice.DAL.Repositories;
 
+/// <summary>
+/// Phien truy cap rut gon cho dashboard: chi cac cot BLL dung, khong keo DeviceKey/Id/EntryPlaceId
+/// tu database (BR-14: khong dua device key ra khoi DAL).
+/// </summary>
+public record AccessSessionSpan(DateTime StartedAt, DateTime LastSeenAt, DateTime? EndedAt, AccessSource Source);
+
 /// <summary>So lieu cho dashboard admin (SCR-A2). Chi doc; BLL gom nhom theo ngay (mui gio Asia/Ho_Chi_Minh).</summary>
 public interface IStatsRepository
 {
     Task<List<DateTime>> GetListenTimesSinceAsync(DateTime fromUtc);
 
     /// <summary>Phien bat dau, dang mo, hoac ket thuc sau <paramref name="fromUtc"/>.</summary>
-    Task<List<AccessSession>> GetSessionsSinceAsync(DateTime fromUtc);
+    Task<List<AccessSessionSpan>> GetSessionsSinceAsync(DateTime fromUtc);
 
     Task<int> CountPublishedPlacesAsync();
 
@@ -26,9 +32,10 @@ public class StatsRepository : IStatsRepository
     public Task<List<DateTime>> GetListenTimesSinceAsync(DateTime fromUtc) =>
         _db.ListenEvents.AsNoTracking().Where(l => l.PlayedAt >= fromUtc).Select(l => l.PlayedAt).ToListAsync();
 
-    public Task<List<AccessSession>> GetSessionsSinceAsync(DateTime fromUtc) =>
+    public Task<List<AccessSessionSpan>> GetSessionsSinceAsync(DateTime fromUtc) =>
         _db.AccessSessions.AsNoTracking()
             .Where(a => a.StartedAt >= fromUtc || a.EndedAt == null || a.EndedAt >= fromUtc)
+            .Select(a => new AccessSessionSpan(a.StartedAt, a.LastSeenAt, a.EndedAt, a.Source))
             .ToListAsync();
 
     public Task<int> CountPublishedPlacesAsync() => _db.Places.CountAsync(p => p.Status == PlaceStatus.Published);

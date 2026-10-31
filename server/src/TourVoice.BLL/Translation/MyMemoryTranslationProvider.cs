@@ -7,6 +7,10 @@ namespace TourVoice.BLL.Translation;
 
 public class MyMemoryTranslationProvider : ITranslationProvider
 {
+    // Hai lan thu: du cho mot lan timeout/5xx thoang qua, khong nhan doi thoi gian cho cua admin.
+    private const int MaxAttempts = 2;
+    private static readonly TimeSpan RetryDelay = TimeSpan.FromMilliseconds(200);
+
     private readonly HttpClient _httpClient;
     private readonly string _email;
 
@@ -22,22 +26,50 @@ public class MyMemoryTranslationProvider : ITranslationProvider
     {
         var url = $"get?q={HttpUtility.UrlEncode(text)}&langpair={sourceLang}|{targetLang}&de={HttpUtility.UrlEncode(_email)}";
 
-        try
+        for (var attempt = 1; ; attempt++)
         {
-            using var response = await _httpClient.GetAsync(url, ct);
-            if (response.StatusCode == HttpStatusCode.TooManyRequests)
-                return Fail(text, TranslationChunkResult.QuotaExceededCode);
-            if (!response.IsSuccessStatusCode)
-                return Fail(text, $"http_{(int)response.StatusCode}");
+            ct.ThrowIfCancellationRequested();
+            try
+            {
+                using var response = await _httpClient.GetAsync(url, ct);
+                if (response.StatusCode == HttpStatusCode.TooManyRequests)
+                    return Fail(text, TranslationChunkResult.QuotaExceededCode);
+                if (!response.IsSuccessStatusCode)
+                {
+                    if (IsTransient(response.StatusCode) && attempt < MaxAttempts)
+                    {
+                        await Task.Delay(RetryDelay, ct);
+                        continue;
+                    }
+                    return Fail(text, $"http_{(int)response.StatusCode}");
+                }
 
-            using var doc = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync(ct), cancellationToken: ct);
-            return Parse(doc.RootElement, text);
-        }
-        catch (Exception ex) when (ex is HttpRequestException or JsonException or TaskCanceledException or InvalidOperationException)
-        {
-            return Fail(text, ex.GetType().Name);
+                using var doc = await JsonDocument.ParseAsync(
+                    await response.Content.ReadAsStreamAsync(ct), cancellationToken: ct);
+                return Parse(doc.RootElement, text);
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                // Nguoi goi huy (dong tab / client timeout): khong phai loi MyMemory, khong ghi nhu mot lan gui that bai.
+                throw;
+            }
+            catch (Exception ex) when (ex is HttpRequestException or JsonException or TaskCanceledException or InvalidOperationException)
+            {
+                // TaskCanceledException khi ct chua huy = HttpClient.Timeout (cau hinh o DependencyInjection).
+                var retryable = ex is HttpRequestException or TaskCanceledException;
+                if (retryable && attempt < MaxAttempts)
+                {
+                    await Task.Delay(RetryDelay, ct);
+                    continue;
+                }
+                return Fail(text, ex.GetType().Name);
+            }
         }
     }
+
+    private static bool IsTransient(HttpStatusCode code) =>
+        code is HttpStatusCode.RequestTimeout or HttpStatusCode.InternalServerError
+            or HttpStatusCode.BadGateway or HttpStatusCode.ServiceUnavailable or HttpStatusCode.GatewayTimeout;
 
     /// <summary>MyMemory tra HTTP 200 kem responseStatus rieng (so hoac chuoi); khac 200 la loi, 429 la het han muc.</summary>
     internal static TranslationChunkResult Parse(JsonElement root, string text)

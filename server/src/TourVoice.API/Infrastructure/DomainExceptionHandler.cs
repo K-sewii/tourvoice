@@ -15,6 +15,9 @@ public sealed class DomainExceptionHandler(IProblemDetailsService problemDetails
     {
         var (status, code, title) = exception switch
         {
+            // Client da ngat ket noi (dong tab/huy request): khong phai loi he thong, khong co ai de tra loi.
+            OperationCanceledException when http.RequestAborted.IsCancellationRequested
+                => (StatusCodes.Status499ClientClosedRequest, "client_closed_request", "Yêu cầu đã bị huỷ."),
             ValidationException e => (StatusCodes.Status400BadRequest, e.Code, e.Message),
             UnauthorizedException e => (StatusCodes.Status401Unauthorized, e.Code, e.Message),
             ForbiddenException e => (StatusCodes.Status403Forbidden, e.Code, e.Message),

@@ -9,11 +9,10 @@ public class UsageLogRepository : IUsageLogRepository
     private readonly TourVoiceDbContext _db;
     public UsageLogRepository(TourVoiceDbContext db) => _db = db;
 
-    public async Task<int> GetTodayCharacterTotalAsync(UsageService service)
+    public async Task<int> GetCharacterTotalSinceAsync(UsageService service, DateTime fromUtc)
     {
-        var todayUtc = DateTime.UtcNow.Date;
         return await _db.UsageLogs
-            .Where(u => u.Service == service && u.CreatedAt >= todayUtc)
+            .Where(u => u.Service == service && u.CreatedAt >= fromUtc)
             .SumAsync(u => (int?)u.Characters) ?? 0;
     }
 

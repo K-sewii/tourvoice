@@ -35,10 +35,8 @@ public class AdminDashboardServiceTests
 
     private static DateTime At(int day, int hour, int minute = 0) => new(2026, 10, day, hour, minute, 0, DateTimeKind.Utc);
 
-    private static AccessSession Session(DateTime start, DateTime? end, AccessSource source = AccessSource.Web) => new()
-    {
-        StartedAt = start, EndedAt = end, LastSeenAt = end ?? start, Source = source,
-    };
+    private static AccessSessionSpan Session(DateTime start, DateTime? end, AccessSource source = AccessSource.Web) =>
+        new(start, end ?? start, end, source);
 
     // ---- access stats ----
 
@@ -116,7 +114,7 @@ public class AdminDashboardServiceTests
         // Phien mo tu 3 gio truoc, lan cuoi thay 3 gio truoc (API restart) -> khong tinh la dang mo.
         _stats.Setup(s => s.GetSessionsSinceAsync(It.IsAny<DateTime>())).ReturnsAsync(
         [
-            new AccessSession { StartedAt = At(27, 5), LastSeenAt = At(27, 5, 1), EndedAt = null },
+            new AccessSessionSpan(At(27, 5), At(27, 5, 1), null, AccessSource.Web),
         ]);
 
         var today = (await _service.GetAccessStatsAsync(1)).Days.Single();
@@ -133,7 +131,7 @@ public class AdminDashboardServiceTests
         _presence.Setup(p => p.GetSnapshot()).Returns(Snap(4));
         _stats.Setup(s => s.CountPublishedPlacesAsync()).ReturnsAsync(16);
         _stats.Setup(s => s.CountDraftTranslationsAsync()).ReturnsAsync(7);
-        _usage.Setup(u => u.GetTodayCharacterTotalAsync(UsageService.MyMemory)).ReturnsAsync(10_000);
+        _usage.Setup(u => u.GetCharacterTotalSinceAsync(UsageService.MyMemory, It.IsAny<DateTime>())).ReturnsAsync(10_000);
 
         var dash = await _service.GetDashboardAsync();
 
@@ -144,13 +142,17 @@ public class AdminDashboardServiceTests
         Assert.Equal(dash.Days[^1], dash.Today);
         Assert.Equal(20.0, dash.Quota.Percent);
         Assert.Equal(45_000, dash.Quota.BlockThreshold);
+        Assert.Equal(QuotaPolicy.AverageWindowDays, dash.Quota.AverageDays);
+        // UI hien thi chu ky presence tu backend, khong viet cung vao HTML.
+        Assert.Equal((int)PresenceService.SweepInterval.TotalSeconds, dash.Presence.RefreshSeconds);
+        Assert.Equal((int)PresenceService.Ttl.TotalSeconds, dash.Presence.TtlSeconds);
     }
 
     [Fact]
     public async Task Usage_ReportsAverageOverSevenDaysAndRecentLogs()
     {
-        _usage.Setup(u => u.GetTodayCharacterTotalAsync(UsageService.MyMemory)).ReturnsAsync(7_000);
-        _usage.Setup(u => u.GetSinceAsync(UsageService.MyMemory, At(21, 0))).ReturnsAsync(
+        _usage.Setup(u => u.GetCharacterTotalSinceAsync(UsageService.MyMemory, It.IsAny<DateTime>())).ReturnsAsync(7_000);
+        _usage.Setup(u => u.GetSinceAsync(UsageService.MyMemory, At(20, 17))).ReturnsAsync(
         [
             new UsageLog { Characters = 7_000 }, new UsageLog { Characters = 14_000 },
         ]);
@@ -162,6 +164,10 @@ public class AdminDashboardServiceTests
         var usage = await _service.GetUsageAsync();
 
         Assert.Equal(3_000, usage.Quota.Average7Days);   // 21.000 / 7
+        Assert.Equal(QuotaPolicy.AverageWindowDays, usage.Quota.AverageDays);
+        Assert.Equal(AdminDashboardService.RecentLogCount, usage.RecentLimit);
+        // 27/10 08:00 UTC = 15:00 gio VN -> ngay 27 bat dau luc 26/10 17:00 UTC (khong phai 00:00 UTC).
+        _usage.Verify(u => u.GetCharacterTotalSinceAsync(UsageService.MyMemory, At(26, 17)), Times.Once);
         var log = Assert.Single(usage.Recent);
         Assert.False(log.Success);
         Assert.Equal("status_403", log.ErrorCode);

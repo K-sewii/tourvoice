@@ -92,6 +92,11 @@ const ja: Messages = {
     empty: 'グルメ情報はまだありません。',
   },
   map: {
+    within: '範囲内',
+    show_radius: '範囲を表示',
+    nearby_places: '近くの場所',
+    search_results: '{{count}} 件の結果',
+    draw_poi: '場所を描く',
     title: '地図',
     locate: '現在地',
     close: '閉じる',

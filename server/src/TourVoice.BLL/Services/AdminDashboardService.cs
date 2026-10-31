@@ -31,13 +31,20 @@ public class AdminDashboardService : IAdminDashboardService
     public async Task<DashboardDto> GetDashboardAsync()
     {
         var days = (await GetAccessStatsAsync(DashboardDays)).Days;
+        var mapRadiusKm = QuotaPolicy.MapRadiusDefaultKm;
+        var liveDeviceCount = await _presence.GetLiveDeviceCountAsync(_clock.GetUtcNow().UtcDateTime);
         return new DashboardDto(
             _presence.GetSnapshot().Live,
             await _stats.CountPublishedPlacesAsync(),
             await _stats.CountDraftTranslationsAsync(),
             days[^1],
             await BuildQuotaAsync(),
-            days);
+            days,
+            new PresenceSettingsDto(
+                (int)PresenceService.SweepInterval.TotalSeconds,
+                (int)PresenceService.Ttl.TotalSeconds),
+            mapRadiusKm,
+            liveDeviceCount);
     }
 
     public async Task<AccessStatsDto> GetAccessStatsAsync(int days)
@@ -78,19 +85,22 @@ public class AdminDashboardService : IAdminDashboardService
         var recent = await _usage.GetRecentAsync(UsageService.MyMemory, RecentLogCount);
         return new UsageDto(
             await BuildQuotaAsync(),
-            recent.Select(l => new UsageLogDto(l.CreatedAt, l.Characters, l.Chunks, l.Success, l.ErrorCode)).ToList());
+            recent.Select(l => new UsageLogDto(l.CreatedAt, l.Characters, l.Chunks, l.Success, l.ErrorCode)).ToList(),
+            RecentLogCount);
     }
 
     private async Task<QuotaDto> BuildQuotaAsync()
     {
-        var used = await _usage.GetTodayCharacterTotalAsync(UsageService.MyMemory);
-        // Trung binh 7 ngay UTC gan nhat (gom hom nay), cung truc ngay voi han muc MyMemory.
-        var weekStart = _clock.GetUtcNow().UtcDateTime.Date.AddDays(-6);
+        var dayStart = QuotaPolicy.DayStartUtc(_clock);
+        var used = await _usage.GetCharacterTotalSinceAsync(UsageService.MyMemory, dayStart);
+        // Trung binh 7 ngay tinh theo ngay Viet Nam (gom hom nay), cung truc voi han muc MyMemory.
+        var weekStart = dayStart.AddDays(-(QuotaPolicy.AverageWindowDays - 1));
         var week = await _usage.GetSinceAsync(UsageService.MyMemory, weekStart);
         return new QuotaDto(
             used, QuotaPolicy.DailyLimit, QuotaPolicy.BlockThreshold,
             Math.Round(used * 100.0 / QuotaPolicy.DailyLimit, 1),
-            (int)Math.Round(week.Sum(l => (long)l.Characters) / 7.0));
+            (int)Math.Round(week.Sum(l => (long)l.Characters) / (double)QuotaPolicy.AverageWindowDays),
+            QuotaPolicy.AverageWindowDays);
     }
 
     private static DateTime Min(DateTime a, DateTime b) => a < b ? a : b;

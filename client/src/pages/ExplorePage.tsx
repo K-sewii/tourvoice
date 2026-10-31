@@ -7,15 +7,7 @@ import { CardSkeletons, Empty, ErrorState } from '../components/States'
 import { useAsync } from '../hooks/useAsync'
 import { useDistanceFormatter } from '../hooks/useGeolocation'
 import { useLang, useLocalePath } from '../hooks/useLang'
-import {
-  categoryLabel,
-  foodTypeLabel,
-  joinMeta,
-  localizeAddress,
-  localizePrice,
-  localizeTitle,
-  matches,
-} from '../lib/labels'
+import { categoryLabel, foodTypeLabel, joinMeta, localizePrice, matches } from '../lib/labels'
 
 const CATEGORIES = ['Heritage', 'Market', 'FoodStreet', 'Park'] as const
 
@@ -43,17 +35,17 @@ export default function ExplorePage() {
         .filter((p) =>
           !category ? true : category === 'food' ? p.kind === 'Food' : p.kind === 'Destination' && p.category === category,
         )
-        .filter((p) => !q || matches(`${localizeTitle(p.name, lang)} ${p.name} ${p.slug} ${p.parentName ?? ''}`, q))
+        .filter((p) => !q || matches(`${p.name} ${p.slug} ${p.parentName ?? ''}`, q))
         .map((p) => {
           const isFood = p.kind === 'Food'
           return {
             key: `${p.kind}${p.id}`,
             to: to(placePath(p)),
-            title: localizeTitle(p.name, lang),
+            title: p.name,
             chip: isFood ? foodTypeLabel(t, p.foodType) : categoryLabel(t, p.category),
             meta: isFood
               ? joinMeta(localizePrice(p.priceRange, lang), p.openingHours, distance(p.latitude, p.longitude))
-              : joinMeta(localizeAddress(p.address?.split(',')[0], lang), p.openingHours, distance(p.latitude, p.longitude)),
+              : joinMeta(p.address?.split(',')[0], p.openingHours, distance(p.latitude, p.longitude)),
             cover: p.coverImageUrl,
             audio: !isFood,
           }
