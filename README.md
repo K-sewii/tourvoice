@@ -1,120 +1,163 @@
-# TourVoice — Thuyết Minh Đa Ngôn Ngữ Quận 6
+# TourVoice
 
-Hệ thống web ứng dụng ưu tiên điện thoại: khách quét QR tại điểm đến, chọn ngôn ngữ (5 ngón ngữ) và nghe thuyết minh về địa điểm, món ăn, văn hóa. Quản trị viên quản lý nội dung và bản dịch trên dashboard.
+[![CI](https://github.com/K-sewii/tourvoice/actions/workflows/ci.yml/badge.svg)](https://github.com/K-sewii/tourvoice/actions/workflows/ci.yml)
+[![.NET](https://img.shields.io/badge/.NET-10-512BD4?logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
+[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](https://react.dev/)
+[![MySQL](https://img.shields.io/badge/MySQL-8.4-4479A1?logo=mysql&logoColor=white)](https://www.mysql.com/)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
 
-**[Tài liệu nghiệp vụ (PRD, sơ đồ, slide trình bày) nằm trong `docs/`](docs/)**
+Hệ thống thuyết minh du lịch đa ngôn ngữ cho **Quận 6, TP.HCM**. Khách quét QR tại điểm đến, chọn một trong 5 ngôn ngữ và nghe thuyết minh ngay trên trình duyệt. Quản trị viên quản lý địa điểm, bản dịch, báo cáo và theo dõi khách online theo thời gian thực.
+
+> Tài liệu nghiệp vụ (PRD, sơ đồ, slide) nằm trong [`docs/`](docs/).
 
 ---
 
 ## Tính năng
 
-### Web cho du khách (`client/`)
+**Dành cho du khách**
 
-- **5 ngôn ngữ**: Tiếng Việt, English, 中文, 한국어, 日本語. Ngôn ngữ nằm trên URL (`/{lang}/...`), tự nhận diện lần đầu và ghi nhớ.
-- **Trang chủ**, **Khám phá** (lọc theo danh mục, tìm kiếm không dấu), **Am thực & Văn hóa**, **Bản đồ** (Leaflet, tải lazy), **chi tiết địa điểm / món ăn**.
-- **Thuyết minh bằng Web Speech API** của trình duyệt, ghi nhận lượt nghe (listen events).
-- **Lối vào từ QR**: `/q/{slug}` → chuyển đến trang địa điểm theo ngôn ngữ của máy.
-- **Đăng ký / đăng nhập khách hàng**: thích thú, đã ghé thăm, lịch sử.
-- **Heartbeat "đang online"**: để quản trị viên theo dõi khách thời gian thực qua SignalR.
-- **Tìm kiếm địa điểm** trên bản đồ.
-- **Xem qua QR mã**: QR mã tại điểm chứa `/q/{slug}`, khách quét để nghe bài thuyết minh ngay.
+- 5 ngôn ngữ: Tiếng Việt, English, 中文, 한국어, 日本語 — ngôn ngữ nằm trên URL (`/{lang}/...`) và được ghi nhớ.
+- Trang chủ, Khám phá (lọc + tìm kiếm không dấu), Ẩm thực & Văn hóa, Bản đồ Leaflet, chi tiết địa điểm/món ăn.
+- Thuyết minh bằng Web Speech API, ghi nhận lượt nghe.
+- Lối vào từ QR: `/q/{slug}` → tự chuyển đúng ngôn ngữ của máy.
+- Đăng ký/đăng nhập, yêu thích, đã ghé thăm, lịch sử nghe.
+- Heartbeat "đang online" qua SignalR.
 
-### API (`server/`)
+**Dành cho quản trị viên**
 
-- Nội dung công khai, xác thực JWT, tài khoản khách hàng, quản trị địa điểm & bản dịch.
-- **Dịch máy qua MyMemory**, có ghi log mức sử dụng; bản dịch cần duyệt trước khi công khai.
-- **Presence thời gian thực qua SignalR** (`/hubs/presence`, chỉ Admin).
-- **Giới hạn tốc độ**: 120 req/phút mỗi thiết bị, 1.200 req/phút mỗi IP, 10 req/phút cho đăng nhập/đăng ký.
-- **Lỗi trả về dạng RFC 7807 ProblemDetails** kém `traceId`.
-- **Hạn chế MyMemory**: 50.000 ký tự/ngày (cùng 1 email), chặn ở 45.000 ký tự/ngày (BR-06).
+- Quản trị địa điểm (thêm/sửa/xóa, publish hàng loạt), bản dịch (duyệt tay, dịch máy MyMemory).
+- Báo cáo lượt nghe, QR, quota MyMemory, dashboard KPI và live presence.
 
-### Dashboard quản trị (đang develop)
+**API**
 
-- Quản trị địa điểm: thêm/sửa/xóa/batch publish.
-- Quản trị bản dịch: duyệt/dịch máy/setting.
-- Báo cáo lượt nghe, QR quét, quota MyMemory.
-- Dashboard tổng quan với KPI cards, bar charts, live presence.
+- JWT HS256, phân quyền Customer/Admin, rate limiting (120 req/phút/thiết bị, 1.200 req/phút/IP).
+- Lỗi theo RFC 7807 ProblemDetails kèm `traceId`.
+- Giới hạn MyMemory 50.000 ký tự/ngày, chặn ở 45.000 (BR-06).
 
 ---
 
 ## Công nghệ
 
-| Phần | Công nghệ |
-|------|-----------|
-| **Backend** | .NET 10, ASP.NET Core Web API, EF Core 10 + MySQL (`MySql.EntityFrameworkCore`), SignalR, JWT HS256, AutoMapper, FluentValidation |
-| **Frontend** | React 19, TypeScript, Vite 8, React Router 7, i18next, Leaflet / react-leaflet, React Query |
+| Thành phần | Công nghệ |
+|---|---|
+| **Backend** | .NET 10 · ASP.NET Core Web API · EF Core 10 (MySQL) · SignalR · JWT · AutoMapper · FluentValidation |
+| **Frontend** | React 19 · TypeScript · Vite · React Router 7 · i18next · Leaflet · React Query |
 | **Database** | MySQL 8.4 (utf8mb4) |
-| **Kiểm thử** | xUnit, Moq, NetArchTest · Vitest, Testing Library |
-| **Triển khai** | Docker Compose (db + api + client/nginx), GitHub Actions CI/CD |
+| **Kiểm thử** | xUnit · Moq · NetArchTest · Vitest · Testing Library |
+| **Hạ tầng** | Docker Compose · GitHub Actions (CI/CD) · GitHub Codespaces |
 
 ---
 
-## Cấu trúc thư mục
+## Chạy nhanh
 
-```
-tourvoice/
-├── client/                   # Web du khách (React + Vite + TS)
-│   ├── src/
-│   │   ├── api/              # Gọi REST API (http client)
-│   │   ├── auth/             # AuthContext (JWT, refresh token)
-│   │   ├── components/       # Header, PlaceCard, NarrationPlayer, QrCodeModal, ...
-│   │   ├── hooks/            # useNarrationPlayer, usePresence, useGeolocation, useLang, useAsync, ...
-│   │   ├── i18n/locales/     # vi, en, zh, ko, ja (i18next)
-│   │   ├── lib/              # speech, geo, deviceId, languages, labels, safeReturn, ...
-│   │   ├── pages/            # Home, Explore, FoodCulture, Map, PlaceDetail, Auth, Account, NotFound
-│   │   ├── styles/           # global.css, responsive, components
-│   │   ├── hooks/            # hook collections
-│   │   └── App.tsx           # Route configuration, AuthProvider
-│   ├── package.json
-│   ├── vite.config.ts
-│   ├── Dockerfile
-│   └── public/
-├── server/
-│   ├── src/
-│   │   ├── TourVoice.API/    # Controllers, SignalR hub, rate limit, Program.cs
-│   │   ├── TourVoice.BLL/    # Services, DTOs, dịch máy (MyMemory), khởi tạo DB, validation
-│   │   ├── TourVoice.DAL/    # DbContext, Entities, Repositories, Migrations, Seeder
-│   │   └── tests/            # BLL.Tests, API.Tests, ArchitectureTests (layer dependency)
-│   └── docker-compose.yml
-├── docs/                     # PRD, sơ đồ drawio, slide trình bày
-├── docker-compose.yml
-├── .env.example
-└── README.md
-```
-
-**Backend theo kiến trúc 3 lớp API → BLL → DAL**: `Program.cs` chỉ gọi `builder.Services.AddBusinessLayer(config)`, hàm này tự gọi `AddDataAccessLayer()`. Quy tắc phụ thuộc giữa các lớp được kiểm tra tự động trong `TourVoice.ArchitectureTests`.
-
----
-
-## Chạy bằng Docker Compose
+**Yêu cầu:** Docker + Docker Compose.
 
 ```bash
-cp .env.example .env      # rồi sửa DB_PASSWORD, DB_ROOT_PASSWORD, JWT_KEY (>= 32 ký tự), MYMEMORY_EMAIL
-docker compose up --build
+git clone https://github.com/K-sewii/tourvoice.git
+cd tourvoice
+cp .env.example .env        # điền DB_PASSWORD, DB_ROOT_PASSWORD, JWT_KEY (>= 32 ký tự)
+docker compose up --build -d
 ```
+
+Hoặc để script tự sinh secret ngẫu nhiên:
+
+```bash
+bash .devcontainer/setup.sh
+docker compose up --build -d
+```
+
+Mở **http://localhost:5173**. Lần chạy đầu, API tự migrate và seed dữ liệu mẫu.
 
 | Dịch vụ | Địa chỉ |
 |---|---|
-| Web | http://localhost:5173 |
-| API | http://localhost:5049 |
-| Swagger UI | http://localhost:5049/swagger |
-| Health check | http://localhost:5049/health |
-| MySQL | localhost:3306 (chỉ dùng khi dev) |
+| Web (và API qua proxy) | http://localhost:5173 |
+| API trực tiếp | http://localhost:5049 |
+| Swagger UI | http://localhost:5173/swagger |
+| Health check | http://localhost:5173/health |
+| MySQL | localhost:3306 (chỉ khi dev) |
 
-Ở môi trường `Development`, API tự chạy migration và seed dữ liệu mẫu (ngôn ngữ, địa điểm, món ăn) cùng tài khoản quản trị:
+**Tài khoản mặc định:** `admin@tourvoice.local` / `Admin@12345` — đổi trước khi triển khai thật.
 
-- Email: `admin@tourvoice.local`
-- Mật khẩu: `Admin@12345`
+```bash
+docker compose logs -f api   # xem log
+docker compose down          # tắt, giữ dữ liệu
+docker compose down -v       # tắt và xóa dữ liệu MySQL
+```
 
-**Đổi mật khẩu này trước khi triển khai thật.**
+### Demo trên GitHub Codespaces
+
+Repo có sẵn `.devcontainer/` (Docker-in-Docker, forward cổng 5173/5049).
+
+1. GitHub → **Code → Codespaces → Create codespace on main**.
+2. Codespace tự chạy `.devcontainer/setup.sh` (tạo `.env`, sinh secret, điền `WEB_ORIGIN`).
+3. `docker compose up --build -d`.
+4. Tab **Ports** → cổng **5173** → *Open in Browser*.
+5. Cho người khác demo: chuột phải cổng 5173 → **Port Visibility → Public** (đã đặt sẵn `public`).
+
+Nginx của container `client` reverse proxy `/api`, `/hubs`, `/uploads`, `/swagger` sang container `api`, nên trình duyệt chỉ dùng **một origin** — không phải build lại `VITE_API_URL` theo domain và không vướng CORS. URL `https://<codespace>-5173.app.github.dev` cũng dùng được cho QR.
 
 ---
 
-## Chạy khi phát triển (không dùng Docker)
+## Cấu hình
 
-**Yêu cầu**: .NET SDK 10, Node.js 22, MySQL 8.4.
+Mọi biến nằm trong `.env` ở gốc repo (copy từ `.env.example`, **không commit**).
 
-### Backend (http://localhost:5049) — cấu hình lưu bằng user-secrets, chỉ cần đặt một lần
+| Biến | Bắt buộc | Mô tả |
+|---|:---:|---|
+| `DB_PASSWORD` | ✅ | Mật khẩu user `tv` của MySQL. |
+| `DB_ROOT_PASSWORD` | ✅ | Mật khẩu root MySQL. |
+| `JWT_KEY` | ✅ | Khóa HS256, tối thiểu 32 byte. |
+| `JWT_ISSUER` / `JWT_AUDIENCE` | — | Mặc định `TourVoice` / `TourVoiceClient`. |
+| `MYMEMORY_EMAIL` | — | Email MyMemory → nâng hạn mức lên 50.000 ký tự/ngày. |
+| `WEB_ORIGIN` | — | Origin của web cho CORS (Codespaces tự điền). |
+| `VITE_API_URL` | — | Để **trống** = gọi API qua nginx cùng origin. Chỉ đặt khi web/API khác domain. |
+
+---
+
+## Kiến trúc
+
+```
+Browser ──HTTPS──▶ client (nginx :80) ──/api /hubs /uploads──▶ api (.NET :8080) ──▶ MySQL 8.4
+                        │
+                        └── SPA tĩnh (React build)
+```
+
+Backend theo kiến trúc 3 lớp **API → BLL → DAL**, phụ thuộc một chiều. `Program.cs` chỉ gọi `AddBusinessLayer()`, hàm này tự gọi `AddDataAccessLayer()` (ADR-01). Ranh giới các lớp được ép bằng `TourVoice.ArchitectureTests`.
+
+### Cấu trúc thư mục
+
+```
+tourvoice/
+├── client/                 # React + Vite + TS
+│   ├── src/
+│   │   ├── api/            # HTTP client, module theo nhóm endpoint
+│   │   ├── auth/           # AuthContext (JWT, refresh token)
+│   │   ├── components/     # Header, PlaceCard, NarrationPlayer, ...
+│   │   ├── hooks/          # useAsync, usePresence, useNarrationPlayer, ...
+│   │   ├── i18n/locales/   # vi, en, zh, ko, ja
+│   │   ├── pages/          # trang khách + pages/admin/ (SCR-A1..A8)
+│   │   └── lib/            # speech, geo, deviceId, safeReturn, ...
+│   ├── nginx.conf          # SPA + reverse proxy /api, /hubs, /uploads
+│   └── Dockerfile
+├── server/
+│   ├── src/
+│   │   ├── TourVoice.API/  # Controllers, SignalR hub, rate limit, Program.cs
+│   │   ├── TourVoice.BLL/  # Services, DTOs, dịch máy, validation
+│   │   └── TourVoice.DAL/  # DbContext, Entities, Repositories, Migrations
+│   └── tests/              # BLL.Tests, API.Tests, ArchitectureTests
+├── .devcontainer/          # Docker-in-Docker cho GitHub Codespaces
+├── docs/                   # PRD, sơ đồ, slide
+├── docker-compose.yml
+└── .env.example
+```
+
+---
+
+## Phát triển (không dùng Docker)
+
+**Yêu cầu:** .NET SDK 10, Node.js 22, MySQL 8.4.
+
+**Backend** — http://localhost:5049 (cấu hình bằng user-secrets, chỉ đặt một lần):
 
 ```bash
 API=server/src/TourVoice.API
@@ -126,110 +169,80 @@ dotnet user-secrets set "MyMemory:Email" "team@example.com" --project $API
 dotnet run --project $API --launch-profile http
 ```
 
-### Frontend (http://localhost:5173) — mặc định gọi API ở localhost:5049
+**Frontend** — http://localhost:5173 (mặc định gọi API ở `localhost:5049`):
 
 ```bash
 cd client && npm install && npm run dev
 ```
 
-### Thêm migration:
+**Migration mới** (chạy trong `server/`):
 
 ```bash
 dotnet ef migrations add <Ten> --project src/TourVoice.DAL --startup-project src/TourVoice.API
 ```
-(chạy trong `server/`).
 
 ---
 
 ## Kiểm thử
 
 ```bash
-cd server && dotnet test                         # unit test + kiểm tra kiến trúc
+cd server && dotnet test                          # unit test + kiểm tra kiến trúc
 cd client && npm run lint && npm test && npm run build
 ```
 
-CI (`.github/workflows/ci.yml`) chạy đúng các bước trên cho mỗi pull request và push vào `main`.
+CI (`.github/workflows/ci.yml`) chạy các bước trên cho mỗi pull request và push vào `main`. Khi CI xanh, `cd.yml` build image API lên GHCR, deploy qua SSH và kiểm tra `/health` (chạy tay workflow với `image_tag` để rollback).
 
 ---
 
 ## API
 
-**Tiền tố**: `/api/v1`. Các endpoint công khai nhận `?lang=vi|en|zh|ko|ja` (mặc định `vi`).
+Tiền tố `/api/v1`. Endpoint công khai nhận `?lang=vi|en|zh|ko|ja` (mặc định `vi`).
 
 | Nhóm | Endpoint | Quyền |
 |---|---|---|
-| **Ngôn ngữ** | `GET /languages` | Công khai |
-| **Địa điểm** | `GET /places` · `GET /places/{slug}` · `GET /places/{slug}/foods` | Công khai |
-| **Khám phá** | `GET /explore?category=&q=` (category: `Heritage`, `Market`, `FoodStreet`, `Park`, `food`) | Công khai |
-| **Bản đồ** | `GET /map/markers` | Công khai |
-| **Lượt nghe** | `POST /listen-events` | Công khai |
-| **Presence** | `POST /presence/heartbeat` · `POST /presence/leave` | Công khai |
-| **Xác thực** | `POST /auth/register` · `POST /auth/login` | Công khai |
-| **Tài khoản** | `GET /me` · `GET/POST/DELETE /me/favorites/{placeId}` · `GET/POST /me/visits/{placeId}` · `GET /me/history` | Customer |
-| **Quản trị địa điểm** | `GET/POST /admin/places` · `GET/PUT /admin/places/{id}` · `POST /admin/places/{id}/publish` · `POST /admin.places/{id}/hide` | Admin |
-| **Quản trị bản dịch** | `POST /admin/places/{id}/translate` · `POST /admin.places/{id}/translations/{lang}/approve` | Admin |
-| **Presence** | `GET /admin/presence` · SignalR `/hubs/presence` | Admin |
+| Ngôn ngữ | `GET /languages` | Công khai |
+| Địa điểm | `GET /places` · `GET /places/{slug}` · `GET /places/{slug}/foods` | Công khai |
+| Khám phá | `GET /explore?category=&q=` (`Heritage`, `Market`, `FoodStreet`, `Park`, `food`) | Công khai |
+| Bản đồ | `GET /map/markers` | Công khai |
+| Lượt nghe | `POST /listen-events` | Công khai |
+| Presence | `POST /presence/heartbeat` · `POST /presence/leave` | Công khai |
+| Xác thực | `POST /auth/register` · `POST /auth/login` | Công khai |
+| Tài khoản | `GET /me` · `GET/POST/DELETE /me/favorites/{placeId}` · `GET/POST /me/visits/{placeId}` · `GET /me/history` | Customer |
+| Quản trị địa điểm | `GET/POST /admin/places` · `GET/PUT /admin/places/{id}` · `POST /admin/places/{id}/publish` · `POST /admin/places/{id}/hide` | Admin |
+| Quản trị bản dịch | `POST /admin/places/{id}/translate` · `POST /admin/places/{id}/translations/{lang}/approve` | Admin |
+| Presence | `GET /admin/presence` · SignalR `/hubs/presence` | Admin |
 
-Đầy đủ spec xem tại **Swagger UI** khi chạy ở môi trường Development (http://localhost:5049/swagger).
+Đặc tả đầy đủ: Swagger UI tại `/swagger` khi chạy môi trường Development.
 
 ---
 
-## Triển khai (Deployment)
+## Triển khai
 
-### 1. Sử dụng Docker Compose (Khuyên dùng cho Dev & Demo)
+**Docker Compose trên VPS (khuyên dùng)**
 
 ```bash
-cp .env.example .env
-docker compose up --build
+cp .env.example .env && docker compose up --build -d
 ```
 
-Cấu hình Cloudflare Tunnel miễn phí để expose API ra Internet (không cần public IP):
-1. Cài Cloudflare Tunnel client: `cloudflared tunnel --url http://localhost:5049`
-2. Tunnel sẽ cấp URL dạng `*.trycloudflare.com`
-3. Cấu hình DNS record trỏ domain cá nhân nếu có.
-
-Ưu điểm: Khác với Vercel/Cloudflare Pages (không chạy container .NET), Docker Compose giữ toàn bộ logic .NET, MySQL, SignalR hoạt động thật.
-
-### 2. Deploy lên Vercel / Cloudflare Pages (Cho Frontend Chỉ)
-
-⚠️ **Lưu ý**: Vercel và Cloudflare Pages **không chạy container .NET**, vì vậy chỉ dùng cho Frontend (React + Vite).
-
-- **Build Frontend**: `npm run build` → deploy Vercel/Cloudflare.
-- **API tách riêng**: Dùng Node.js/Go/Python thay thế API .NET, hoặc dùng API hiện có và chỉ deploy Frontend qua Vercel.
-- **Dữ liệu**: Cần cấu hình database bên ngoài (PlanetScale, Supabase, AWS RDS) vì MySQL container không chạy trên Vercel.
-
-### 3. Production Setup (Full)
-
-1. **Database**: MySQL 8.4 trên VPS hoặc managed service (AWS RDS, PlanetScale, Supabase).
-2. **API**: Deploy `.exe` hoặc Docker container lên VPS/Render.com/Azure App Service.
-3. **Frontend**: Deploy Next.js/Vercel/Cloudflare Pages (hoặc giữ nguyên React + Vite + Docker).
-4. **HTTPS**: Tự động qua Cloudflare DNS + SSL hoặc Let's Encrypt.
-5. **Monitoring**: Setup health checks, logs qua Docker ou thành phần bên ngoài.
-
----
-
-## Kiểm thử
+Đặt sau reverse proxy HTTPS (Caddy, Traefik, Nginx hoặc Cloudflare Tunnel) và trỏ vào cổng **5173** — API, SignalR, ảnh upload đã đi qua cùng origin:
 
 ```bash
-cd server && dotnet test                         # unit test + kiểm tra kiến trúc (ArchitectureTests)
-cd client && npm run lint && npm test && npm run build
+cloudflared tunnel --url http://localhost:5173
 ```
 
-CI/CD pipeline (`.github/workflows/ci.yml`) chạy đúng các bước trên cho mỗi pull request và push vào `main`. Kết quả test hiển thị badge trên repository.
+**Tách frontend (Vercel/Cloudflare Pages)** — các nền tảng này không chạy container .NET: deploy API riêng, build web với `VITE_API_URL=https://api.example.com`, và thêm domain web vào `Cors:Origins`.
 
 ---
 
-## Tài liệu chi tiết
+## Tài liệu
 
-- **PRD (Product Requirements)**: `docs/PRD_TourVoice.docx` hoặc `docs/system-presentation-standalone.html`
-- **Slide thuyết trình**: `docs/system-presentation-standalone.html` (cấu trúc: Tổng quan, Kiến trúc, Nội dung, Thuyết minh, Audio, Bản đồ, Auth, Admin, Data/API, UI, CI/CD)
-- **Sơ đồ Draw.io**: `docs/` (quy trình dữ liệu, quy trình dịch máy, quy trình admin)
-- **Architecture ADRs**: Xem trong `server/tests/TourVoice.ArchitectureTests/LayerDependencyTests.cs`
+- **PRD:** [`docs/PRD TourVoice – Quận 6.docx`](docs/) · **Slide:** [`docs/TourVoice_System_Presentation.html`](docs/TourVoice_System_Presentation.html)
+- **Sơ đồ:** [`docs/TourVoice_PRD_Diagrams.drawio`](docs/TourVoice_PRD_Diagrams.drawio)
+- **Quy ước & ADR:** [`AGENT.md`](AGENT.md)
 
 ---
 
-## Liên hệ / Câu hỏi
+## Liên hệ
 
 - Email: `team.tourvoice@example.com`
-- Khách hàng truy cập: `http://localhost:5173` (hoặc domain production)
-- Admin: `http://localhost:5173/admin/login` (mặc định: `admin@tourvoice.local` / `Admin@12345`)
+- Khách: `http://localhost:5173` · Admin: `http://localhost:5173/admin/login`
