@@ -14,6 +14,7 @@ import { useLang, useLocalePath } from '../hooks/useLang'
 import { MapRadiusDefaultKm, MapRadiusMaxKm } from '../api/types'
 import { categoryLabel, foodTypeLabel, joinMeta, localizePrice } from '../lib/labels'
 import { distanceMeters, formatDistance, type LatLng } from '../lib/geo'
+import { TILE_ATTRIBUTION, TILE_URL } from '../lib/mapTiles'
 
 const CENTER: LatLng = { lat: 10.748, lng: 106.64 }
 const RADIUS_MIN_M = 50
@@ -188,10 +189,7 @@ export default function MapPage() {
       {data && (
         <>
           <MapContainer center={geo.position ?? CENTER} zoom={15} scrollWheelZoom zoomControl={false}>
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
+            <TileLayer attribution={TILE_ATTRIBUTION} url={TILE_URL} />
             {selected && (
               <Circle
                 center={[selected.lat, selected.lng]}

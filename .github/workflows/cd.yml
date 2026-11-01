@@ -1,6 +1,7 @@
 name: CD
 
 # Tu dong khi CI xanh tren main. Rollback: Run workflow, nhap image_tag la ma commit on dinh truoc do.
+# Neu chua cau hinh secret may chu (DEPLOY_HOST...), buoc deploy tu bo qua va pipeline van xanh.
 on:
   workflow_run:
     workflows: [CI]
@@ -18,7 +19,8 @@ concurrency:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository_owner }}/tourvoice-api
+  API_IMAGE_NAME: ${{ github.repository_owner }}/tourvoice-api
+  WEB_IMAGE_NAME: ${{ github.repository_owner }}/tourvoice-web
 
 jobs:
   image:
@@ -67,10 +69,26 @@ jobs:
           file: ./server/Dockerfile
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.tag }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+            ${{ env.REGISTRY }}/${{ env.API_IMAGE_NAME }}:${{ steps.tag.outputs.tag }}
+            ${{ env.REGISTRY }}/${{ env.API_IMAGE_NAME }}:latest
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,scope=api,mode=max
+
+      - name: Build va push image Web
+        if: steps.tag.outputs.rebuild == 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: ./client
+          file: ./client/Dockerfile
+          push: true
+          # Rong = web goi API qua nginx cung origin (xem client/nginx.conf).
+          build-args: |
+            VITE_API_URL=
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.WEB_IMAGE_NAME }}:${{ steps.tag.outputs.tag }}
+            ${{ env.REGISTRY }}/${{ env.WEB_IMAGE_NAME }}:latest
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,scope=web,mode=max
 
   deploy:
     name: deploy
@@ -78,11 +96,36 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     steps:
+      # Khong co may chu (repo demo) thi bo qua deploy thay vi fail ca pipeline.
+      - name: Kiem tra cau hinh deploy
+        id: cfg
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          HEALTH_URL: ${{ secrets.HEALTH_URL }}
+        run: |
+          missing=""
+          for name in DEPLOY_HOST DEPLOY_USER DEPLOY_SSH_KEY DEPLOY_PATH HEALTH_URL; do
+            if [ -z "${!name}" ]; then
+              missing="$missing $name"
+            fi
+          done
+          if [ -n "$missing" ]; then
+            echo "::notice::Chua cau hinh secret:$missing -> bo qua buoc deploy."
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/checkout@v4
+        if: steps.cfg.outputs.enabled == 'true'
         with:
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - name: Chep compose len may chu
+        if: steps.cfg.outputs.enabled == 'true'
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.DEPLOY_HOST }}
@@ -93,26 +136,29 @@ jobs:
           strip_components: 1
 
       - name: Pull image va khoi dong lai
+        if: steps.cfg.outputs.enabled == 'true'
         uses: appleboy/ssh-action@v1.0.3
         env:
           IMAGE_TAG: ${{ needs.image.outputs.tag }}
           GHCR_USER: ${{ github.actor }}
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          API_IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          API_IMAGE: ${{ env.REGISTRY }}/${{ env.API_IMAGE_NAME }}
+          WEB_IMAGE: ${{ env.REGISTRY }}/${{ env.WEB_IMAGE_NAME }}
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
-          envs: IMAGE_TAG,GHCR_USER,GHCR_TOKEN,API_IMAGE
+          envs: IMAGE_TAG,GHCR_USER,GHCR_TOKEN,API_IMAGE,WEB_IMAGE
           script: |
             set -e
             cd "${{ secrets.DEPLOY_PATH }}"
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
-            docker compose pull api
-            docker compose up -d
+            docker compose pull
+            docker compose up -d --remove-orphans
             docker image prune -f
 
       - name: Kiem tra /health
+        if: steps.cfg.outputs.enabled == 'true'
         env:
           HEALTH_URL: ${{ secrets.HEALTH_URL }}
         run: |

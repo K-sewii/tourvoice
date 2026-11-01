@@ -1,10 +1,11 @@
 {
   "name": "TourVoice",
-  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  "image": "mcr.microsoft.com/devcontainers/base:jammy",
   "features": {
-    "ghcr.io/devcontainers/features/docker-in-docker:2": {
-      "version": "latest",
-      "dockerDashComposeVersion": "v2"
+  "ghcr.io/devcontainers/features/docker-in-docker:2": {
+    "version": "latest",
+    "dockerDashComposeVersion": "v2",
+    "moby": false
     }
   },
   "forwardPorts": [5173, 5049],
@@ -20,5 +21,5 @@
       "visibility": "private"
     }
   },
-  "postCreateCommand": "bash .devcontainer/setup.sh"
+  "postCreateCommand": "bash .devcontainer/setup.sh && bash .devcontainer/start-docker.sh"
 }
