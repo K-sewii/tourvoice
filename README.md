@@ -1,6 +1,7 @@
 # TourVoice
 
 [![CI](https://github.com/K-sewii/tourvoice/actions/workflows/ci.yml/badge.svg)](https://github.com/K-sewii/tourvoice/actions/workflows/ci.yml)
+[![CD](https://github.com/K-sewii/tourvoice/actions/workflows/cd.yml/badge.svg)](https://github.com/K-sewii/tourvoice/actions/workflows/cd.yml)
 [![.NET](https://img.shields.io/badge/.NET-10-512BD4?logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](https://react.dev/)
 [![MySQL](https://img.shields.io/badge/MySQL-8.4-4479A1?logo=mysql&logoColor=white)](https://www.mysql.com/)
