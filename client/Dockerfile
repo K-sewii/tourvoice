@@ -6,7 +6,9 @@ RUN npm install
 
 COPY . .
 # Baked in at build time by Vite; must be reachable from the visitor's browser.
-ARG VITE_API_URL=http://localhost:5049
+# Rong = goi API qua nginx cung origin (proxy /api, /hubs, /uploads trong nginx.conf).
+# Chi dat URL tuyet doi khi web va API nam tren hai domain khac nhau.
+ARG VITE_API_URL=""
 ENV VITE_API_URL=$VITE_API_URL
 RUN npm run build
 
