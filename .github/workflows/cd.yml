@@ -19,8 +19,6 @@ concurrency:
 
 env:
   REGISTRY: ghcr.io
-  API_IMAGE_NAME: ${{ github.repository_owner }}/tourvoice-api
-  WEB_IMAGE_NAME: ${{ github.repository_owner }}/tourvoice-web
 
 jobs:
   image:
@@ -33,10 +31,17 @@ jobs:
       packages: write
     outputs:
       tag: ${{ steps.tag.outputs.tag }}
+      # GHCR bat buoc ten image chu thuong, con github.repository_owner giu nguyen chu hoa
+      # (vd. K-sewii). Chuan hoa mot lan, dung lai cho moi tag va cho buoc deploy.
+      namespace: ${{ steps.vars.outputs.namespace }}
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Chuan hoa namespace GHCR (chu thuong)
+        id: vars
+        run: echo "namespace=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_OUTPUT"
 
       - name: Chon tag
         id: tag
@@ -69,8 +74,8 @@ jobs:
           file: ./server/Dockerfile
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.API_IMAGE_NAME }}:${{ steps.tag.outputs.tag }}
-            ${{ env.REGISTRY }}/${{ env.API_IMAGE_NAME }}:latest
+            ${{ env.REGISTRY }}/${{ steps.vars.outputs.namespace }}/tourvoice-api:${{ steps.tag.outputs.tag }}
+            ${{ env.REGISTRY }}/${{ steps.vars.outputs.namespace }}/tourvoice-api:latest
           cache-from: type=gha,scope=api
           cache-to: type=gha,scope=api,mode=max
 
@@ -85,8 +90,8 @@ jobs:
           build-args: |
             VITE_API_URL=
           tags: |
-            ${{ env.REGISTRY }}/${{ env.WEB_IMAGE_NAME }}:${{ steps.tag.outputs.tag }}
-            ${{ env.REGISTRY }}/${{ env.WEB_IMAGE_NAME }}:latest
+            ${{ env.REGISTRY }}/${{ steps.vars.outputs.namespace }}/tourvoice-web:${{ steps.tag.outputs.tag }}
+            ${{ env.REGISTRY }}/${{ steps.vars.outputs.namespace }}/tourvoice-web:latest
           cache-from: type=gha,scope=web
           cache-to: type=gha,scope=web,mode=max
 
@@ -142,8 +147,8 @@ jobs:
           IMAGE_TAG: ${{ needs.image.outputs.tag }}
           GHCR_USER: ${{ github.actor }}
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          API_IMAGE: ${{ env.REGISTRY }}/${{ env.API_IMAGE_NAME }}
-          WEB_IMAGE: ${{ env.REGISTRY }}/${{ env.WEB_IMAGE_NAME }}
+          API_IMAGE: ${{ env.REGISTRY }}/${{ needs.image.outputs.namespace }}/tourvoice-api
+          WEB_IMAGE: ${{ env.REGISTRY }}/${{ needs.image.outputs.namespace }}/tourvoice-web
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
