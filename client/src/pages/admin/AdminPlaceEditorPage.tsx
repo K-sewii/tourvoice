@@ -22,6 +22,7 @@ import { placePath } from '../../api/places'
 import type { AdminPlaceDetail, AdminTranslation, Language, Quota } from '../../api/types'
 import { CloseIcon, PauseIcon, PlayIcon } from '../../components/Icons'
 import { QrCodePanel } from '../../components/QrCodeModal'
+import { MapAutoResize } from '../../components/MapAutoResize'
 import { ErrorState, Loading } from '../../components/States'
 import { useAsync } from '../../hooks/useAsync'
 import { loadVoices, pickVoice, speechSupported } from '../../lib/speech'
@@ -775,6 +776,7 @@ function PlaceEditorInner({
               scrollWheelZoom
             >
               <TileLayer attribution={TILE_ATTRIBUTION} url={TILE_URL} />
+              <MapAutoResize />
               <Rectangle
                 bounds={SERVICE_BOUNDS}
                 pathOptions={{ color: '#147d78', weight: 2, fillOpacity: 0.05, dashArray: '6 4' }}

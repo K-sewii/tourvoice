@@ -6,6 +6,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { MapContainer, Marker, TileLayer, Circle, Polyline, useMap } from 'react-leaflet'
 import { getCatalog, placePath } from '../api/places'
 import { CloseIcon, LocateIcon, NavigateIcon, PlayIcon } from '../components/Icons'
+import { MapAutoResize } from '../components/MapAutoResize'
 import { ErrorState, Loading } from '../components/States'
 import { useAsync } from '../hooks/useAsync'
 import { useDistanceFormatter, useGeolocation } from '../hooks/useGeolocation'
@@ -190,6 +191,7 @@ export default function MapPage() {
         <>
           <MapContainer center={geo.position ?? CENTER} zoom={15} scrollWheelZoom zoomControl={false}>
             <TileLayer attribution={TILE_ATTRIBUTION} url={TILE_URL} />
+            <MapAutoResize />
             {selected && (
               <Circle
                 center={[selected.lat, selected.lng]}
