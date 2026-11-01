@@ -25,6 +25,7 @@ import { QrCodePanel } from '../../components/QrCodeModal'
 import { ErrorState, Loading } from '../../components/States'
 import { useAsync } from '../../hooks/useAsync'
 import { loadVoices, pickVoice, speechSupported } from '../../lib/speech'
+import { TILE_ATTRIBUTION, TILE_URL } from '../../lib/mapTiles'
 
 const CATEGORIES: { value: string; label: string }[] = [
   { value: 'Heritage', label: 'Di tích (Heritage)' },
@@ -773,10 +774,7 @@ function PlaceEditorInner({
               zoom={15}
               scrollWheelZoom
             >
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
+              <TileLayer attribution={TILE_ATTRIBUTION} url={TILE_URL} />
               <Rectangle
                 bounds={SERVICE_BOUNDS}
                 pathOptions={{ color: '#147d78', weight: 2, fillOpacity: 0.05, dashArray: '6 4' }}

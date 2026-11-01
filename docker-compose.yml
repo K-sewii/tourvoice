@@ -46,6 +46,7 @@ services:
       args:
         # De trong = web goi API qua nginx cung origin (khong phai mo cong API ra Internet).
         VITE_API_URL: ${VITE_API_URL:-}
+        VITE_TILE_URL: ${VITE_TILE_URL:-}
     depends_on:
       - api
     ports:

@@ -10,6 +10,8 @@ Hệ thống thuyết minh du lịch đa ngôn ngữ cho **Quận 6, TP.HCM**. K
 
 > Tài liệu nghiệp vụ (PRD, sơ đồ, slide) nằm trong [`docs/`](docs/).
 
+> **Demo nhanh không cần cài gì:** mở repo bằng GitHub Codespace → `bash .devcontainer/setup.sh && docker compose up --build -d` → mở cổng 5173. Chi tiết ở mục [Demo trên GitHub Codespaces](#demo-trên-github-codespaces).
+
 ---
 
 ## Tính năng
@@ -86,15 +88,31 @@ docker compose down -v       # tắt và xóa dữ liệu MySQL
 
 ### Demo trên GitHub Codespaces
 
-Repo có sẵn `.devcontainer/` (Docker-in-Docker, forward cổng 5173/5049).
+Repo có sẵn `.devcontainer/` (Docker-in-Docker + forward cổng 5173/5049) nên Codespaces tự dựng container có Docker và Docker Compose.
 
 1. GitHub → **Code → Codespaces → Create codespace on main**.
 2. Codespace tự chạy `.devcontainer/setup.sh` (tạo `.env`, sinh secret, điền `WEB_ORIGIN`).
-3. `docker compose up --build -d`.
+3. Trong terminal:
+
+   ```bash
+   docker compose up --build -d
+   ```
+
 4. Tab **Ports** → cổng **5173** → *Open in Browser*.
-5. Cho người khác demo: chuột phải cổng 5173 → **Port Visibility → Public** (đã đặt sẵn `public`).
+5. Cho người khác demo: chuột phải cổng 5173 → **Port Visibility → Public** (devcontainer đã đặt sẵn `public`).
 
 Nginx của container `client` reverse proxy `/api`, `/hubs`, `/uploads`, `/swagger` sang container `api`, nên trình duyệt chỉ dùng **một origin** — không phải build lại `VITE_API_URL` theo domain và không vướng CORS. URL `https://<codespace>-5173.app.github.dev` cũng dùng được cho QR.
+
+**Docker không chạy trong Codespace?**
+
+| Triệu chứng | Cách xử lý |
+|---|---|
+| `docker: command not found` | Codespace đang dùng cấu hình cũ. `Ctrl+Shift+P` → **Codespaces: Rebuild Container**. |
+| `Cannot connect to the Docker daemon` | Rebuild container; hoặc `sudo service docker start` rồi thử lại. |
+| `permission denied ... docker.sock` | `sudo usermod -aG docker "$USER"`, thoát và mở lại terminal. |
+| Build bị kill / OOM | **Codespaces → Change machine type** → máy 4 core. |
+
+Kiểm tra nhanh: `docker info`.
 
 ---
 
@@ -111,6 +129,7 @@ Mọi biến nằm trong `.env` ở gốc repo (copy từ `.env.example`, **khô
 | `MYMEMORY_EMAIL` | — | Email MyMemory → nâng hạn mức lên 50.000 ký tự/ngày. |
 | `WEB_ORIGIN` | — | Origin của web cho CORS (Codespaces tự điền). |
 | `VITE_API_URL` | — | Để **trống** = gọi API qua nginx cùng origin. Chỉ đặt khi web/API khác domain. |
+| `VITE_TILE_URL` | — | Template tile Leaflet. Mặc định dùng CARTO (không cần key); đổi nếu tự host hoặc dùng OSM. |
 
 ---
 
@@ -145,8 +164,10 @@ tourvoice/
 │   │   ├── TourVoice.BLL/  # Services, DTOs, dịch máy, validation
 │   │   └── TourVoice.DAL/  # DbContext, Entities, Repositories, Migrations
 │   └── tests/              # BLL.Tests, API.Tests, ArchitectureTests
-├── .devcontainer/          # Docker-in-Docker cho GitHub Codespaces
+├── .devcontainer/          # Docker-in-Docker + forward cổng cho GitHub Codespaces
+├── deploy/                 # docker-compose.yml + .env.example cho máy chủ (CD dùng)
 ├── docs/                   # PRD, sơ đồ, slide
+├── .github/workflows/      # ci.yml, cd.yml
 ├── docker-compose.yml
 └── .env.example
 ```
@@ -190,7 +211,7 @@ cd server && dotnet test                          # unit test + kiểm tra kiế
 cd client && npm run lint && npm test && npm run build
 ```
 
-CI (`.github/workflows/ci.yml`) chạy các bước trên cho mỗi pull request và push vào `main`. Khi CI xanh, `cd.yml` build image API lên GHCR, deploy qua SSH và kiểm tra `/health` (chạy tay workflow với `image_tag` để rollback).
+CI (`.github/workflows/ci.yml`) chạy các bước trên cho mỗi pull request và push vào `main`. Khi CI xanh, `cd.yml` build và push 2 image (`tourvoice-api`, `tourvoice-web`) lên GHCR, deploy qua SSH rồi kiểm tra `/health`. Bước deploy tự bỏ qua nếu chưa cấu hình secret máy chủ; chạy tay workflow với `image_tag` để rollback.
 
 ---
 
@@ -218,19 +239,47 @@ Tiền tố `/api/v1`. Endpoint công khai nhận `?lang=vi|en|zh|ko|ja` (mặc 
 
 ## Triển khai
 
-**Docker Compose trên VPS (khuyên dùng)**
+### Docker Compose trên VPS
+
+Cách nhanh cho demo (build tại chỗ, mở cả cổng dev):
 
 ```bash
 cp .env.example .env && docker compose up --build -d
 ```
 
-Đặt sau reverse proxy HTTPS (Caddy, Traefik, Nginx hoặc Cloudflare Tunnel) và trỏ vào cổng **5173** — API, SignalR, ảnh upload đã đi qua cùng origin:
+Với máy chủ public, dùng stack `deploy/docker-compose.yml` (image GHCR, chỉ mở cổng **8080**, MySQL/API nội bộ) — `cd.yml` tự copy file này lên. Đặt sau reverse proxy HTTPS (Caddy, Traefik, Nginx hoặc Cloudflare Tunnel):
 
 ```bash
-cloudflared tunnel --url http://localhost:5173
+cloudflared tunnel --url http://localhost:8080
 ```
 
-**Tách frontend (Vercel/Cloudflare Pages)** — các nền tảng này không chạy container .NET: deploy API riêng, build web với `VITE_API_URL=https://api.example.com`, và thêm domain web vào `Cors:Origins`.
+### CD tự động (GitHub Actions)
+
+Khi CI xanh trên `main`, `cd.yml` build 2 image (`tourvoice-api`, `tourvoice-web`) và push lên GHCR, rồi SSH vào máy chủ để `docker compose pull && up -d` và kiểm tra `/health`.
+
+Cấu hình **Secrets** (Settings → Secrets and variables → Actions):
+
+| Secret | Ý nghĩa |
+|---|---|
+| `DEPLOY_HOST` | IP/domain máy chủ. |
+| `DEPLOY_USER` | User SSH. |
+| `DEPLOY_SSH_KEY` | Private key SSH (thêm public key vào `~/.ssh/authorized_keys`). |
+| `DEPLOY_PATH` | Thư mục trên máy chủ, ví dụ `/opt/tourvoice`. |
+| `HEALTH_URL` | URL kiểm tra sau deploy, ví dụ `https://tourvoice.example.com/health`. |
+
+Chuẩn bị máy chủ một lần:
+
+```bash
+mkdir -p /opt/tourvoice && cd /opt/tourvoice
+# copy deploy/.env.example -> .env rồi điền DB_PASSWORD, JWT_KEY, WEB_ORIGIN...
+# lan deploy dau dat INITIALIZE_ON_STARTUP=true de migrate + seed, sau do doi false
+```
+
+Nếu **chưa** cấu hình đủ secrets, bước deploy tự bỏ qua và pipeline vẫn xanh (job ghi notice) — phù hợp khi repo chỉ dùng Codespaces để demo. Chạy tay workflow với `image_tag` để rollback.
+
+### Tách frontend (Vercel/Cloudflare Pages)
+
+Các nền tảng này không chạy container .NET: deploy API riêng, build web với `VITE_API_URL=https://api.example.com`, và thêm domain web vào `Cors:Origins`.
 
 ---
 

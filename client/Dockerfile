@@ -10,6 +10,9 @@ COPY . .
 # Chi dat URL tuyet doi khi web va API nam tren hai domain khac nhau.
 ARG VITE_API_URL=""
 ENV VITE_API_URL=$VITE_API_URL
+# Optional raster tile template; empty = client/src/lib/mapTiles.ts default (CARTO).
+ARG VITE_TILE_URL=""
+ENV VITE_TILE_URL=$VITE_TILE_URL
 RUN npm run build
 
 FROM nginx:alpine AS runtime

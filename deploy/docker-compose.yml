@@ -1,0 +1,58 @@
+# Production stack (cd.yml chep file nay len may chu).
+# Khac docker-compose.yml o goc repo:
+#   - Image lay tu GHCR (do cd.yml build), khong build tai cho.
+#   - Chi container web mo cong 8080; API va MySQL chi nam trong mang Docker.
+#   - Web (nginx) phuc vu SPA + reverse proxy /api, /hubs, /uploads, /health sang api
+#     => mot origin duy nhat, khong can CORS giua web va API.
+# Dat HTTPS phia truoc cong 8080 bang Caddy/Nginx hoac Cloudflare Tunnel.
+#
+# Truoc lan deploy dau: copy deploy/.env.example -> deploy/.env va dien gia tri.
+services:
+  db:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: tourvoice
+      MYSQL_USER: tv
+      MYSQL_PASSWORD: ${DB_PASSWORD:?Can DB_PASSWORD trong .env}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Can DB_ROOT_PASSWORD trong .env}
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_0900_ai_ci"]
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      retries: 10
+    restart: unless-stopped
+
+  api:
+    image: ${API_IMAGE:?Can API_IMAGE}:${IMAGE_TAG:-latest}
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      # Lan dau: true de migrate + seed (tao admin). Sau khi chay xong doi thanh false.
+      Database__InitializeOnStartup: ${INITIALIZE_ON_STARTUP:-false}
+      ConnectionStrings__TourVoice: "Server=db;Port=3306;Database=tourvoice;User=tv;Password=${DB_PASSWORD}"
+      Jwt__Key: ${JWT_KEY:?Can JWT_KEY (>= 32 ky tu) trong .env}
+      Jwt__Issuer: ${JWT_ISSUER:-TourVoice}
+      Jwt__Audience: ${JWT_AUDIENCE:-TourVoiceClient}
+      MyMemory__Email: ${MYMEMORY_EMAIL}
+      Cors__Origins__0: ${WEB_ORIGIN:?Can WEB_ORIGIN (domain web) trong .env}
+    volumes:
+      - uploads:/app/uploads
+    expose:
+      - "8080"
+    restart: unless-stopped
+
+  web:
+    image: ${WEB_IMAGE:?Can WEB_IMAGE}:${IMAGE_TAG:-latest}
+    depends_on:
+      - api
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+
+volumes:
+  mysql-data:
+  uploads:
