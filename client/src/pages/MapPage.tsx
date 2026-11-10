@@ -280,7 +280,7 @@ export default function MapPage() {
 
           {geofenceOn && enteredPin && (
             <div className="geofence-banner" role="alert">
-              <strong>{t('map.geofence_enter', { defaultValue: 'Bạn đang ở gần' })} {enteredPin.name}</strong>
+              <strong>{t('map.geofence_enter', { name: enteredPin.name })}</strong>
               <div className="detail-actions">
                 <Link to={to(enteredPin.detailPath)} state={{ autoplay: true }} className="btn btn-primary">
                   <PlayIcon size={16} /> {t('common.listen')}
