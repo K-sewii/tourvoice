@@ -286,13 +286,12 @@ Các nền tảng này không chạy container .NET: deploy API riêng, build we
 
 ## Tài liệu
 
-- **PRD:** [`docs/PRD TourVoice – Quận 6.docx`](docs/) · **Slide:** [`docs/TourVoice_System_Presentation.html`](docs/TourVoice_System_Presentation.html)
+- **PRD:** [`docs/PRD TourVoice – Quận 6.docx`](docs/PRD-TourVoice-EN.docx) · **Slide:** [`docs/TourVoice_System_Presentation.html`](docs/TourVoice_System_Presentation.html)
 - **Sơ đồ:** [`docs/TourVoice_PRD_Diagrams.drawio`](docs/TourVoice_PRD_Diagrams.drawio)
-- **Quy ước & ADR:** [`AGENT.md`](AGENT.md)
 
 ---
 
 ## Liên hệ
 
-- Email: `team.tourvoice@example.com`
+- Email: `pnmk29122006@gmail.com`
 - Khách: `http://localhost:5173` · Admin: `http://localhost:5173/admin/login`
