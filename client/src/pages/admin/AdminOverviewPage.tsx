@@ -85,7 +85,8 @@ export default function AdminOverviewPage() {
         <div>
           <h1>Tổng quan</h1>
           <p className="admin-muted">
-            Trực tuyến cập nhật trong {dashboard.presence.refreshSeconds} giây · {dashboard.publishedPlaces} địa điểm đã xuất bản
+            {/* Thiết bị gửi tín hiệu trực tuyến trong {dashboard.presence.refreshSeconds} giây ·  */}
+            {dashboard.publishedPlaces} địa điểm đã xuất bản
           </p>
         </div>
         <div>

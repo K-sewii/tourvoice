@@ -32,7 +32,7 @@ public interface IPresenceService
 }
 
 /// <summary>
-/// Dem nguoi truy cap (SD-04, BR-14..17): heartbeat 15 s lam moi TTL 45 s trong bo nho;
+/// Dem nguoi truy cap (SD-04, BR-14..17): heartbeat 5 s lam moi TTL 45 s trong bo nho;
 /// thiet bi moi mo phien AccessSession (quay lai trong 30 phut thi mo lai phien cu);
 /// moi thay doi so lieu deu day toi dashboard qua <see cref="IPresenceNotifier"/>.
 /// </summary>
@@ -41,7 +41,7 @@ public partial class PresenceService : IPresenceService
     public static readonly TimeSpan Ttl = TimeSpan.FromSeconds(45);              // BR-15
     public static readonly TimeSpan NewSessionAfter = TimeSpan.FromMinutes(30);  // BR-16
     /// <summary>PresenceSweeper quet lai moi 15 giay; dashboard admin hien thi chu ky nay tu backend.</summary>
-    public static readonly TimeSpan SweepInterval = TimeSpan.FromSeconds(15);
+    public static readonly TimeSpan SweepInterval = TimeSpan.FromSeconds(5);
 
     private readonly IPresenceStore _store;
     private readonly IAccessSessionRepository _sessions;
