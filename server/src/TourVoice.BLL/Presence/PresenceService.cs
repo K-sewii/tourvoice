@@ -41,7 +41,7 @@ public partial class PresenceService : IPresenceService
     public static readonly TimeSpan Ttl = TimeSpan.FromSeconds(45);              // BR-15
     public static readonly TimeSpan NewSessionAfter = TimeSpan.FromMinutes(30);  // BR-16
     /// <summary>PresenceSweeper quet lai moi 15 giay; dashboard admin hien thi chu ky nay tu backend.</summary>
-    public static readonly TimeSpan SweepInterval = TimeSpan.FromSeconds(5);
+    public static readonly TimeSpan SweepInterval = TimeSpan.FromSeconds(15);
 
     private readonly IPresenceStore _store;
     private readonly IAccessSessionRepository _sessions;

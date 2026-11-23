@@ -3,7 +3,7 @@ import { API_URL, request } from '../api/http'
 import { entrySource, getDeviceId } from '../lib/deviceId'
 
 /** FR-19 / BR-15: heartbeat every 15 s; the server drops a device after 45 s of silence. */
-export const HEARTBEAT_MS = 5_000
+export const HEARTBEAT_MS = 15_000
 
 /**
  * Live-visitor counting (SD-04, ADR-10): plain HTTP heartbeats instead of a WebSocket, so it
