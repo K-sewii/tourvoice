@@ -16,7 +16,7 @@ public static class DbSeeder
     private record FoodSeed(string Slug, string Parent, string FoodType, decimal Lat, decimal Lng,
         string Price, string Hours, int Order, string Name, string Narration);
 
-    private const string FoodCover = "/seed/mon-an.svg";
+    private const string FoodCover = "/seed/mon-an.jpg";
     private static readonly DestinationSeed[] Destinations =
     [
         new("dinh-binh-tien", "Heritage", 10.750m, 106.642m, "122 Minh Phụng, phường Bình Tây, TP.HCM", "07:00 - 17:00", 1,
@@ -97,7 +97,7 @@ public static class DbSeeder
             {
                 Slug = d.Slug, Kind = PlaceKind.Destination, Category = d.Category,
                 Latitude = d.Lat, Longitude = d.Lng, Address = d.Address, OpeningHours = d.Hours,
-                CoverImageUrl = $"/seed/{d.Slug}.svg",
+                CoverImageUrl = $"/seed/{d.Slug}.jpg",
                 Status = PlaceStatus.Published, SortOrder = d.Order,
                 Translations = { Vi(d.Name, d.Narration) },
             };
