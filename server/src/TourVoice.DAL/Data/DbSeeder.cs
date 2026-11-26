@@ -17,6 +17,27 @@ public static class DbSeeder
         string Price, string Hours, int Order, string Name, string Narration);
 
     private const string FoodCover = "/seed/mon-an.jpg";
+
+    // Anh rieng cho tung mon (ten file trong client/public/seed khong trung slug nen can bang anh xa).
+    private static readonly Dictionary<string, string> FoodImages = new()
+    {
+        ["mau-pho-bo-cho-binh-tay"] = "/seed/pho-bo.jpg",          // chua co file -> them vao client/public/seed
+        ["mau-com-tam-suon"]        = "/seed/com-tam-suon.jpg",
+        ["mau-hu-tieu-nam-vang"]    = "/seed/hu-tieu-nam-vang.jpg",
+        ["mau-banh-bao-cho-lon"]    = "/seed/banh-bao-cho-lon.jpg",
+        ["mau-sam-bo-luong"]        = "/seed/sam-bo-luong.jpg",
+        ["mau-che-tau-xiu"]         = "/seed/che-tau-xiu.jpg",     // nho doi ten file che-tau-xiu.jpg.jpg
+        ["mau-banh-xeo"]            = "/seed/banh-xeo.jpg",
+        ["mau-hu-tieu-mi"]          = "/seed/hu-tieu-mi.jpg",
+        ["mau-che-ba-mau"]          = "/seed/che-ba-mau.jpg",
+        ["mau-com-chien"]           = "/seed/com-chien-duong-chau.jpg",
+        ["mau-nuoc-mia"]            = "/seed/nuoc-mia.jpg",
+        ["mau-bot-chien"]           = "/seed/bot-chien.jpg",
+    };
+
+    private static string FoodCoverFor(string slug) =>
+        FoodImages.GetValueOrDefault(slug, FoodCover);
+
     private static readonly DestinationSeed[] Destinations =
     [
         new("dinh-binh-tien", "Heritage", 10.750m, 106.642m, "122 Minh Phụng, phường Bình Tây, TP.HCM", "07:00 - 17:00", 1,
@@ -85,7 +106,7 @@ public static class DbSeeder
 
         if (await db.Places.AnyAsync())
         {
-            // DB da seed tu truoc: chi bu anh bia con thieu (du lieu cu tao truoc khi co anh).
+            // DB da seed tu truoc: cap nhat anh bia (trong, anh chung cu, svg cu) sang anh moi.
             await BackfillSeedCoversAsync(db);
             return;
         }
@@ -112,7 +133,7 @@ public static class DbSeeder
             {
                 Slug = f.Slug, Kind = PlaceKind.Food, FoodType = f.FoodType, Parent = parent,
                 Latitude = f.Lat, Longitude = f.Lng, Address = parent.Address, PriceRange = f.Price, OpeningHours = f.Hours,
-                CoverImageUrl = FoodCover,
+                CoverImageUrl = FoodCoverFor(f.Slug),
                 Status = PlaceStatus.Published, SortOrder = f.Order,
                 Translations = { Vi(f.Name, f.Narration) },
             });
@@ -122,25 +143,29 @@ public static class DbSeeder
     }
 
     /// <summary>
-    /// Ban seed cu (tao truoc khi co anh bia) van phai Publish lai duoc: BR-08 bat buoc CoverImageUrl.
-    /// Chi dien cho dong dang trong, khong ghi de anh admin da tai len.
+    /// Ban seed cu van phai Publish lai duoc (BR-08 bat buoc CoverImageUrl) va hien dung anh mon.
+    /// Chi dung vao dong trong, anh chung cu (mon-an.jpg) hoac svg cu; anh admin da tai len thi giu nguyen.
     /// </summary>
     private static async Task BackfillSeedCoversAsync(TourVoiceDbContext db)
     {
-        var destinationCovers = Destinations.ToDictionary(d => d.Slug, d => $"/seed/{d.Slug}.svg");
+        var destinationCovers = Destinations.ToDictionary(d => d.Slug, d => $"/seed/{d.Slug}.jpg");
         var foodSlugs = Foods.Select(f => f.Slug).ToHashSet(StringComparer.Ordinal);
 
-        var missing = await db.Places
-            .Where(p => p.CoverImageUrl == null || p.CoverImageUrl == "")
+        var candidates = await db.Places
+            .Where(p => p.CoverImageUrl == null
+                     || p.CoverImageUrl == ""
+                     || p.CoverImageUrl == FoodCover
+                     || p.CoverImageUrl.EndsWith(".svg"))
             .ToListAsync();
 
         var changed = false;
-        foreach (var place in missing)
+        foreach (var place in candidates)
         {
-            var cover = destinationCovers.TryGetValue(place.Slug, out var own)
+            string? cover = destinationCovers.TryGetValue(place.Slug, out var own)
                 ? own
-                : foodSlugs.Contains(place.Slug) ? FoodCover : null;
-            if (cover is null) continue;
+                : foodSlugs.Contains(place.Slug) ? FoodCoverFor(place.Slug) : null;
+
+            if (cover is null || place.CoverImageUrl == cover) continue;
             place.CoverImageUrl = cover;
             changed = true;
         }
